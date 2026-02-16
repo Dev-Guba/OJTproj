@@ -6,9 +6,15 @@ Go to SourceTree
 Clone Repositories
 Create / Add Branch
 
-### For Backend
+### Backend installation ###
+
+```bash
 cd Backend
 npm install
+```
 
-### Running Backend
+
+### Running The Backend ###
+```bash
 npm start
+```
