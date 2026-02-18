@@ -11,8 +11,8 @@ export async function findAdminById(id) {
 export async function findAdminByEmail(email) {
   return await User.findOne({
     where: {
-      email,       // email from login form
-      role_id: 1   // only admin
+      email,       
+      role_id: 1   
     }
   });
 }
