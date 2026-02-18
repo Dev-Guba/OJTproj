@@ -18,3 +18,11 @@ npm install
 ```bash
 npm start
 ```
+
+### Sequelize installation ###
+
+```bash
+cd Backend
+npm install sequelize sequelize-cli tedious
+npx sequelize-cli init
+```
