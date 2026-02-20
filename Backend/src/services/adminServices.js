@@ -1,4 +1,4 @@
-import { User } from "../model/index.js";
+import { User } from "../models/index.js";
 export async function findAdminById(id) {
   return await User.findOne({
     where: {

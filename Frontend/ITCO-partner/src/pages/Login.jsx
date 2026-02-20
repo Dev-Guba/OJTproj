@@ -4,24 +4,29 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  if (user) navigate("/dashboard/view");
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard/view");
+    }
+  }, [user, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const ok = await login({ username, password });
+    const ok = await login({ email, password });
     setLoading(false);
 
-    if (!ok) return toast.error("Invalid credentials. Use admin / admin");
+    if (!ok) return toast.error("Invalid credentials.");
     toast.success("Welcome back.");
     navigate("/dashboard/view");
   };
@@ -45,10 +50,10 @@ export default function Login() {
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <form className="space-y-4" onSubmit={onSubmit}>
               <Input
-                label="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                label="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@gmail.com"
               />
               <Input
                 label="Password"
