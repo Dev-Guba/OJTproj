@@ -2,11 +2,23 @@ import express from "express";
 import dotenv from "dotenv";
 import sequelize from "./src/config/db.js";
 import adminRoutes from "./src/routes/adminRoute.js";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+
+// Setting the allowed origin
+const allowedOrigins = ["http://localhost:5173"]; 
+
+app.use(
+  cors ({
+    origin : allowedOrigins,
+    credentials: true,
+  }),
+);
+
 
 // Routes
 app.use("/admin", adminRoutes);
