@@ -1,4 +1,4 @@
-import Http from "./http.js";
+import Http from "./Http.js";
 
 const Api = {
   AdminLoginAPI: (data) => Http.post("/admin/auth/login", data),
