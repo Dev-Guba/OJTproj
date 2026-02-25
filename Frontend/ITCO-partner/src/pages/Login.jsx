@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -13,17 +13,34 @@ export default function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  if (user) navigate("/dashboard/view");
+  // Redirect based on role after login
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role_id === 1) navigate("/DashboardLayout"); // Admin
+    else navigate("/dashboard/view"); // Normal user
+  }, [user, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const ok = await login({ username, password });
-    setLoading(false);
 
-    if (!ok) return toast.error("Invalid credentials. Use admin / admin");
-    toast.success("Welcome back.");
-    navigate("/dashboard/view");
+    try {
+      const ok = await login({ username, password });
+
+      if (ok) {
+        toast.success("Welcome back!");
+        console.log(ok);
+      } else {
+        toast.error("invalid cred!");
+        // useEffect will handle navigation
+      }
+    } catch (err) {
+      toast.error("Something went wrong. Try again.");
+      console.error(err);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -57,14 +74,11 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="admin"
               />
-
               <Button className="w-full" type="submit" disabled={loading}>
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
           </div>
-
-          
         </div>
       </div>
     </div>
