@@ -12,9 +12,9 @@ export function AuthProvider({ children }) {
     if (raw) setUser(JSON.parse(raw));
   }, []);
 
-  const login = async ({ username, password }) => {
+  const login = async ({ email, password }) => {
     try {
-      const res = await Api.AdminLoginAPI({ email: username, password });
+      const res = await Api.AdminLoginAPI({ email , password });
       
       // Check if backend returned a user
 
@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
       user_id: res.data.user_id,
       role_id: res.data.role_id,
       email: res.data.email,
-      username: username,
+      username: email,
     };
       const token = res.data.token;
 

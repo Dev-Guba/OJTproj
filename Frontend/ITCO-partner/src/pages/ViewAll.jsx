@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { articlesApi } from "../api/articleApi";
+import { recordsApi } from "../api/records.api";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import Select from "../components/ui/Select";
 import Modal from "../components/ui/Modal";
+import RecordsTable from "../components/records/RecordsTable";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -11,16 +13,28 @@ const PAGE_SIZE = 8;
 export default function ViewAll() {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
+  const [officeFilter, setOfficeFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ key: "createdAt", dir: "desc" });
   const [confirm, setConfirm] = useState({ open: false, id: null });
+
+  // ✅ Report modal state
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportPaper, setReportPaper] = useState("auto"); // auto | a4 | letter
+  const [reportPerPage, setReportPerPage] = useState(20);
+  const [reportIncludeHeader, setReportIncludeHeader] = useState(true);
+  const [reportIncludePageNumbers, setReportIncludePageNumbers] = useState(true);
 
   const navigate = useNavigate();
 
   // Load data
   const loadData = async () => {
-    const data = await articlesApi.getAll();
-    setItems(data);
+    try {
+      const data = await recordsApi.getAll();
+      setItems(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error("Failed to load records.");
+    }
   };
 
   useEffect(() => {
@@ -31,12 +45,19 @@ export default function ViewAll() {
   const filtered = useMemo(() => {
     let data = [...items];
 
+    if (officeFilter !== "All") {
+      data = data.filter((x) => String(x.office ?? "").trim() === officeFilter);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       data = data.filter(
         (x) =>
-          String(x.propNumber).toLowerCase().includes(q) ||
-          String(x.accountableOfficer).toLowerCase().includes(q)
+          String(x.propNumber ?? "").toLowerCase().includes(q) ||
+          String(x.accountableOfficer ?? "").toLowerCase().includes(q) ||
+          String(x.article ?? "").toLowerCase().includes(q) ||
+          String(x.description ?? "").toLowerCase().includes(q) ||
+          String(x.office ?? "").toLowerCase().includes(q)
       );
     }
 
@@ -54,7 +75,7 @@ export default function ViewAll() {
     });
 
     return data;
-  }, [items, search, sort]);
+  }, [items, search, officeFilter, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -69,7 +90,7 @@ export default function ViewAll() {
 
   const handleDelete = async () => {
     try {
-      await articlesApi.remove(confirm.id);
+      await recordsApi.remove(confirm.id);
       toast.success("Record removed.");
       setConfirm({ open: false, id: null });
       loadData();
@@ -78,104 +99,105 @@ export default function ViewAll() {
     }
   };
 
+  const officeOptions = useMemo(() => {
+    const set = new Set();
+    items.forEach((x) => {
+      const v = String(x.office ?? "").trim();
+      if (v) set.add(v);
+    });
+    return ["All", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+  }, [items]);
+
+  // ✅ Existing download logic (Step 2 will pass report options into backend)
+  const onGenerateReport = async () => {
+    const t = toast.loading("Generating PDF report...");
+    try {
+      const res = await recordsApi.generateReport({
+        search,
+        office: officeFilter,
+        paperSize: reportPaper,
+        perPage: reportPerPage,
+        includeHeader: reportIncludeHeader,
+        includePageNumbers: reportIncludePageNumbers,
+      });
+
+      const blob = new Blob([res.data], { type: "application/pdf" });
+
+      const cd = res.headers?.["content-disposition"] || "";
+      const match = cd.match(/filename="(.+?)"/);
+      const filename = match?.[1] || "ICTO-Records-Report.pdf";
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Report downloaded.", { id: t });
+    } catch (e) {
+      toast.error("Failed to generate report.", { id: t });
+    }
+  };
+
+  const confirmGenerateReport = async () => {
+    setReportOpen(false);
+    await onGenerateReport();
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">All Records</h2>
+      {/* Controls Row: left = search+filter, right = report button */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex w-full flex-col gap-3 md:flex-row md:items-end">
+          <div className="w-full md:w-96">
+            <Input
+              label="Search"
+              placeholder="Search by Article, Prop No., Officer, Office..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          <div className="w-full md:w-64">
+            <Select
+              label="Filter (Office)"
+              value={officeFilter}
+              onChange={(e) => {
+                setOfficeFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              {officeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
 
-        <div className="w-full md:w-80">
-          <Input
-            label="Search"
-            placeholder="Search by Prop # or Officer"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
+        <div className="md:ml-auto">
+          <Button type="button" onClick={() => setReportOpen(true)}>
+            Generate Report
+          </Button>
         </div>
       </div>
 
       {/* Table Card */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-250 w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
-              <tr>
-                {[
-                  ["article", "Article"],
-                  ["propNumber", "Prop #"],
-                  ["dateAcquired", "Date"],
-                  ["accountableOfficer", "Officer"],
-                  ["value", "Value"],
-                  ["quantity", "Qty"],
-                  ["office", "Office"],
-                ].map(([key, label]) => (
-                  <th
-                    key={key}
-                    onClick={() => changeSort(key)}
-                    className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:text-gray-900"
-                  >
-                    {label}{" "}
-                    {sort.key === key && (
-                      <span>{sort.dir === "asc" ? "▲" : "▼"}</span>
-                    )}
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-left font-semibold">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                    No records found.
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-t hover:bg-gray-50 transition"
-                  >
-                    <td className="px-4 py-3">{item.article}</td>
-                    <td className="px-4 py-3 font-medium">{item.propNumber}</td>
-                    <td className="px-4 py-3">{item.dateAcquired}</td>
-                    <td className="px-4 py-3">{item.accountableOfficer}</td>
-                    <td className="px-4 py-3">{item.value}</td>
-                    <td className="px-4 py-3">{item.quantity}</td>
-                    <td className="px-4 py-3">{item.office}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          onClick={() =>
-                            navigate(`/dashboard/add?edit=${item.id}`)
-                          }
-                        >
-                          Edit
-                        </Button>
-
-                        <Button
-                          variant="danger"
-                          onClick={() =>
-                            setConfirm({ open: true, id: item.id })
-                          }
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="border bg-white shadow-sm overflow-hidden">
+        <RecordsTable
+          rows={paginated}
+          sort={sort}
+          onSort={changeSort}
+          onEdit={(id) => navigate(`/dashboard/add?edit=${id}`)}
+          onDelete={(id) => setConfirm({ open: true, id })}
+        />
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
@@ -184,13 +206,10 @@ export default function ViewAll() {
           </div>
 
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              disabled={page === 1}
-              onClick={() => setPage(1)}
-            >
+            <Button variant="ghost" disabled={page === 1} onClick={() => setPage(1)}>
               First
             </Button>
+
             <Button
               variant="ghost"
               disabled={page === 1}
@@ -198,15 +217,15 @@ export default function ViewAll() {
             >
               Prev
             </Button>
+
             <Button
               variant="ghost"
               disabled={page === totalPages}
-              onClick={() =>
-                setPage((p) => Math.min(totalPages, p + 1))
-              }
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
               Next
             </Button>
+
             <Button
               variant="ghost"
               disabled={page === totalPages}
@@ -218,7 +237,90 @@ export default function ViewAll() {
         </div>
       </div>
 
-      {/* Delete Confirmation */}
+      {/* ✅ Report Options Modal */}
+      <Modal
+        open={reportOpen}
+        title="Generate Report"
+        onClose={() => setReportOpen(false)}
+        onConfirm={confirmGenerateReport}
+        confirmText="Generate"
+      >
+        <div className="space-y-5">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Paper Size:</div>
+            <div className="mt-2 space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="paper"
+                  checked={reportPaper === "auto"}
+                  onChange={() => setReportPaper("auto")}
+                />
+                <span>Auto</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="paper"
+                  checked={reportPaper === "a4"}
+                  onChange={() => setReportPaper("a4")}
+                />
+                <span>A4</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="paper"
+                  checked={reportPaper === "letter"}
+                  onChange={() => setReportPaper("letter")}
+                />
+                <span>Letter</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Records Per Page:</div>
+            <div className="mt-2">
+              <select
+                className="w-32 rounded-xl border px-3 py-2 text-sm"
+                value={reportPerPage}
+                onChange={(e) => setReportPerPage(Number(e.target.value))}
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Include:</div>
+            <div className="mt-2 space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={reportIncludeHeader}
+                  onChange={(e) => setReportIncludeHeader(e.target.checked)}
+                />
+                <span>Header</span>
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={reportIncludePageNumbers}
+                  onChange={(e) => setReportIncludePageNumbers(e.target.checked)}
+                />
+                <span>Page Numbers</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
       <Modal
         open={confirm.open}
         title="Remove this item?"

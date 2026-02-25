@@ -1,8 +1,0 @@
-# environmental files
-.env
-
-logs/
-*.log
-
-dist/
-build/

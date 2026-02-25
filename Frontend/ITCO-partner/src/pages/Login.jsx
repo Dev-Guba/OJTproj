@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLocation } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +17,9 @@ export default function Login() {
   useEffect(() => {
     if (!user) return;
 
-    if (user.role_id === 1) navigate("/DashboardLayout"); // Admin
+    if (user.role_id === 1 && location.pathname !== "DashboardLayout") {
+      navigate("/DashboardLayout"); // Admin
+    }
     else navigate("/dashboard/view"); // Normal user
   }, [user, navigate]);
 
@@ -26,7 +28,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const ok = await login({ username, password });
+      const ok = await login({ email, password });
 
       if (ok) {
         toast.success("Welcome back!");
@@ -62,10 +64,10 @@ export default function Login() {
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <form className="space-y-4" onSubmit={onSubmit}>
               <Input
-                label="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                label="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@gmail.com"
               />
               <Input
                 label="Password"
