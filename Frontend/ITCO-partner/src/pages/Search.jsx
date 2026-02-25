@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { articlesApi } from "../api/articleApi";
+import { recordsApi } from "../api/records.api";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
@@ -17,7 +17,7 @@ export default function ViewAll() {
 
   const navigate = useNavigate();
 
-  const load = async () => setItems(await articlesApi.getAll());
+  const load = async () => setItems(await recordsApi.getAll());
 
   useEffect(() => {
     load();
@@ -61,7 +61,7 @@ export default function ViewAll() {
 
   const onDelete = async (id) => {
     try {
-      await articlesApi.remove(id);
+      await recordsApi.remove(id);
       toast.success("Removed.");
       setConfirm({ open: false, id: null });
       load();
