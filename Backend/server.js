@@ -1,19 +1,19 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-
+import { seedAdminIfMissing } from "./src/seed/seedAdmin.js";
 import sequelize from "./src/config/db.js";
 import adminRoutes from "./src/routes/adminRoute.js";
 import recordRoutes from "./src/routes/recordRoute.js";
 
-// Load models BEFORE sync
+
 import "./src/models/index.js";
 
 dotenv.config();
 
 const app = express();
 
-// ✅ CORS must be BEFORE routes
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -51,6 +51,8 @@ async function startServer() {
 
     await sequelize.sync({ alter: true });
     console.log("✅ Tables synced successfully.");
+
+    await seedAdminIfMissing();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);

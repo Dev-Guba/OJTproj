@@ -6,7 +6,7 @@ export async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-    // Service function should find admin by email & role_id
+  
     const admin = await findAdminByEmail(email);
 
     if (!admin) {
