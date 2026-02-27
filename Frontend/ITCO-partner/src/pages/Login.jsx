@@ -1,77 +1,102 @@
+// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/AuthContext";
-import toast from "react-hot-toast";
-import { useEffect } from "react";
+
+// ✅ background image (make sure the filename matches exactly)
+import bgImage from "../assets/Login_background.JPG";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  const { login, user } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
+  const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    const ok = await login({ email, password });
-    setLoading(false);
+    if (!form.email.trim() || !form.password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
 
-    if (!ok) return toast.error("Invalid credentials.");
-    toast.success("Welcome back.");
-    navigate("/dashboard/view");
+    setLoading(true);
+    const ok = await login({ email: form.email.trim(), password: form.password });
+
+    if (ok) {
+      toast.success("Login successful!");
+      navigate("/dashboard", { replace: true });
+    } else {
+      toast.error("Invalid credentials.");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto grid min-h-screen max-w-6xl place-items-center px-4">
-        <div className="w-full max-w-md">
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gray-900 text-white">
-                A
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">Asset Manager</h1>
-                <p className="text-sm text-gray-500">Sign in to continue</p>
-              </div>
-            </div>
-          </div>
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center relative px-4"
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
+      {/* dark overlay */}
+      <div className="absolute inset-0 bg-linear-to-br from-black/70 via-black/50 to-black/70" />
 
-          <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <form className="space-y-4" onSubmit={onSubmit}>
-              <Input
-                label="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@gmail.com"
-              />
-              <Input
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="admin"
-              />
 
-              <Button className="w-full" type="submit" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
-              </Button>
-            </form>
-          </div>
+      {/* Login Card */}
+<div className="relative z-10 w-full max-w-md rounded-2xl 
+                bg-white/60 backdrop-blur-xl 
+                shadow-[0_25px_60px_rgba(0,0,0,0.45)] 
+                border border-white/30 
+                p-8 transition-all duration-300">
 
-          
-        </div>
-      </div>
+  {/* Header */}
+  <div className="mb-6 text-center">
+    <h1 className="text-xl font-semibold tracking-wide text-gray-900">
+      Provincial Administrator's Office
+    </h1>
+    <p className="text-sm text-gray-600 mt-1">
+      Records Management System
+    </p>
+  </div>
+
+  {/* Form */}
+  <form onSubmit={onSubmit} className="space-y-4">
+    <Input
+      label="Email"
+      type="email"
+      placeholder="Enter your email"
+      value={form.email}
+      onChange={set("email")}
+    />
+
+    <Input
+      label="Password"
+      type="password"
+      placeholder="Enter your password"
+      value={form.password}
+      onChange={set("password")}
+    />
+
+    <Button
+      type="submit"
+      disabled={loading}
+      className="w-full bg-gray-900 hover:bg-black text-white transition-all duration-200"
+    >
+      {loading ? "Logging in..." : "Login"}
+    </Button>
+  </form>
+
+  {/* Footer */}
+  <div className="mt-6 text-center text-xs text-gray-500">
+    © {new Date().getFullYear()} Provincial Administrator's Office
+  </div>
+</div>
     </div>
   );
 }

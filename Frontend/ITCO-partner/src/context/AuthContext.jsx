@@ -20,10 +20,18 @@ export function AuthProvider({ children }) {
   const login = async ({ email, password }) => {
     try {
       const res = await Api.AdminLoginAPI({ email, password });
-      const auth = { email, token: res.data.token };
+
+      // ✅ build ONE object that includes token
+      const auth = {
+        user_id: res.data.id ?? res.data.user?.user_id ?? null,
+        role_id: res.data.role_id ?? res.data.user?.role_id ?? null,
+        email: res.data.email ?? res.data.user?.email ?? email,
+        token: res.data.token, // ✅ IMPORTANT
+      };
 
       localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
       setUser(auth);
+
       return true;
     } catch {
       return false;

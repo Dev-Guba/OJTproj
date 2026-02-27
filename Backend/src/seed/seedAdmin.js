@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import User from "../models/User.js";
+import User from "../models/user.model.js";
 
 export async function seedAdminIfMissing() {
   const email = process.env.DEFAULT_ADMIN_EMAIL;

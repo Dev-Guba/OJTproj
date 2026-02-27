@@ -6,17 +6,19 @@ export async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-  
+    const INVALID_MSG = "Invalid email or password";
+
     const admin = await findAdminByEmail(email);
 
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
-    }
+    
+    const dummyHash =
+      "$2b$10$CwTycUXWue0Thq9StjUM0uJ8m7YxkYhJv1QzVQ2NQdRrQwQwQwQwQ";
+    const hashToCompare = admin?.password || dummyHash;
 
-    const isMatch = await bcrypt.compare(password, admin.password);
-    console.log(isMatch);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, hashToCompare);
+
+    if (!admin || !isMatch) {
+      return res.status(401).json({ message: INVALID_MSG });
     }
 
     const token = jwt.sign(
@@ -27,7 +29,7 @@ export async function login(req, res) {
 
     return res.status(200).json({
       message: "Admin login successful",
-      token
+      token,
     });
   } catch (err) {
     return res.status(500).json({ message: "Server Error", error: err.message });
