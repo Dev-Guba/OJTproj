@@ -2,6 +2,9 @@ import { Record } from "../models/index.js";
 import puppeteer from "puppeteer";
 import { Op } from "sequelize";
 import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 /* ======================
    CRUD
@@ -9,6 +12,7 @@ import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
 export async function getAllRecords(req, res) {
   try {
     const rows = await Record.findAll({ order: [["createdAt", "DESC"]] });
+    console.log("Fetched records:", rows.length);
     return res.json(rows);
   } catch (err) {
     return res.status(500).json({ message: "Server Error", error: err.message });
@@ -76,6 +80,19 @@ function chunkArray(arr, size) {
   return out;
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function toDataUriPng(absPath) {
+  // returns "" if missing (so template simply hides the image)
+  try {
+    const buf = fs.readFileSync(absPath);
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
+
 export async function generateRecordsReportPdf(req, res) {
   let browser = null;
 
@@ -86,10 +103,12 @@ export async function generateRecordsReportPdf(req, res) {
     const perPage = Number(req.body?.perPage ?? 20) || 20;
 
     const includeHeader =
-      req.body?.includeHeader === true || String(req.body?.includeHeader ?? "true") === "true";
+      req.body?.includeHeader === true ||
+      String(req.body?.includeHeader ?? "true") === "true";
 
     const includePageNumbers =
-      req.body?.includePageNumbers === true || String(req.body?.includePageNumbers ?? "true") === "true";
+      req.body?.includePageNumbers === true ||
+      String(req.body?.includePageNumbers ?? "true") === "true";
 
     const where = {};
 
@@ -111,21 +130,39 @@ export async function generateRecordsReportPdf(req, res) {
       order: [["createdAt", "DESC"]],
     });
 
-    // NOTE: You asked "records per page" -> we still chunk,
-    // but we generate ONE HTML that can span multiple PDF pages naturally.
-    // If you truly want hard page breaks per chunk, tell me.
+    // ---- ✅ LOGO DATA URI (base64) ----
+    // Your logos are in: Backend/src/assets/
+    // NOTE: filename is case-sensitive on some systems.
+    const assetsDir = path.join(__dirname, "..", "assets");
+
+    const officialSealSrc = toDataUriPng(
+      path.join(assetsDir, "Official_seal.png")
+    );
+
+    const bagongPilipinasSrc = toDataUriPng(
+      path.join(assetsDir, "bagong-pilipinas-logo.png")
+    );
+
+    // ---- header meta ----
     const printed = new Date().toLocaleString();
     const filterLine =
-      [search ? `Search: ${search}` : null, office !== "All" ? `Office: ${office}` : null]
+      [
+        search ? `Search: ${search}` : null,
+        office !== "All" ? `Office: ${office}` : null,
+      ]
         .filter(Boolean)
         .join(" • ") || "No filters";
 
+    // ✅ Build HTML (pass logo src)
     const html = buildRecordsReportHtml({
       rows,
       includeHeader,
       printed,
       filterLine,
       totalRecords: rows.length,
+
+      officialSealSrc,
+      bagongPilipinasSrc,
     });
 
     browser = await puppeteer.launch({
@@ -136,7 +173,8 @@ export async function generateRecordsReportPdf(req, res) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const format = paperSize === "a4" ? "A4" : paperSize === "letter" ? "Letter" : "A4";
+    const format =
+      paperSize === "a4" ? "A4" : paperSize === "letter" ? "Letter" : "A4";
 
     const pdfOptions = {
       format,
@@ -150,7 +188,6 @@ export async function generateRecordsReportPdf(req, res) {
       },
     };
 
-    // ✅ IMPORTANT: these must be STRINGS, not <div></div> JSX
     if (includePageNumbers) {
       pdfOptions.displayHeaderFooter = true;
       pdfOptions.headerTemplate = `<div></div>`;
