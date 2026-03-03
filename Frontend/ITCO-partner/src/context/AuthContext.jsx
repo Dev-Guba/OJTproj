@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import Api from "../api/auth.api";
 import { STORAGE_KEYS } from "../utils/storageKeys";
-import Api from "../api/Api.js";
 
 const AuthContext = createContext(null);
 
@@ -8,51 +8,49 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEYS.AUTH);
-    if (raw) setUser(JSON.parse(raw));
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.AUTH);
+      if (raw) setUser(JSON.parse(raw));
+    } catch {
+      localStorage.removeItem(STORAGE_KEYS.AUTH);
+      setUser(null);
+    }
   }, []);
 
   const login = async ({ email, password }) => {
     try {
-      const res = await Api.AdminLoginAPI({ email , password });
-      
-      // Check if backend returned a user
+      const res = await Api.AdminLoginAPI({ email, password });
 
-      const userData = res.data.user || {
-      user_id: res.data.user_id,
-      role_id: res.data.role_id,
-      email: res.data.email,
-      username: email,
-    };
-      const token = res.data.token;
+      // ✅ build ONE object that includes token
+      const auth = {
+        user_id: res.data.id ?? res.data.user?.user_id ?? null,
+        role_id: res.data.role_id ?? res.data.user?.role_id ?? null,
+        email: res.data.email ?? res.data.user?.email ?? email,
+        token: res.data.token, // ✅ IMPORTANT
+      };
 
-      // Save to localStorage
-      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(userData));
-      localStorage.setItem("token", token);
-
-      // Update context state
-      setUser(userData);
+      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
+      setUser(auth);
 
       return true;
-    } catch (err) {
-      console.error("Login failed:", err);
+    } catch {
       return false;
     }
   };
 
-  // Logout function
   const logout = () => {
     localStorage.removeItem(STORAGE_KEYS.AUTH);
-    localStorage.removeItem("token");
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, login, logout }), [user]);
+  const value = useMemo(
+    () => ({ user, isAuthed: !!user?.token, login, logout }),
+    [user]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Hook to use AuthContext
 export function useAuth() {
   return useContext(AuthContext);
 }

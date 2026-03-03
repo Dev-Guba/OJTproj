@@ -1,4 +1,4 @@
-import Http from "./http";
+import Http from "./Http.js";
 
 export const recordsApi = {
   async getAll() {

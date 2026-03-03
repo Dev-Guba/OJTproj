@@ -21,7 +21,7 @@ export function requireAuth(req, res, next) {
 
 export function requireRole(roleId) {
   return (req, res, next) => {
-    if (!req.user || req.user.role !== roleId) {
+    if (!req.user || req.user.role_id !== roleId) {
       return res.status(403).json({ message: "Forbidden" });
     }
     next();
