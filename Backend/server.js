@@ -55,7 +55,7 @@ app.use(limiter);
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000,
   delayAfter: 100,
-  delayMs: 500,
+  delayMs:() => 500,
 });
 app.use(speedLimiter);
 
@@ -79,13 +79,14 @@ async function startServer() {
     await sequelize.sync({ alter: true });
     console.log("✅ Tables synced.");
 
-    await seedAdminIfMissing();
+    // await seedAdminIfMissing();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("❌ Server start failed.");
+    console.log(error);
     process.exit(1);
   }
 }
