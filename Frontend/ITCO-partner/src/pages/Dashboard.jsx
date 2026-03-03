@@ -17,11 +17,40 @@ export default function Dashboard() {
     const load = async () => {
       try {
         const data = await recordsApi.getAll();
-        setRows(Array.isArray(data) ? data : []);
+        console.log("GET /records returned:", data);
+        console.log("Is array?", Array.isArray(data));
+        "Keys:", data && typeof data === "object" ? Object.keys(data) : null;
+        const list = Array.isArray(data) ? data : [];
+
+        // ✅ normalize backend fields → frontend fields (prevents stats showing 0 due to name mismatch)
+        const normalized = list.map((r) => ({
+          ...r,
+
+          // id (important for React keys)
+          id: r.id ?? r.record_id ?? r.recordId ?? r._id,
+
+          // quantities / values
+          balQty: r.balQty ?? r.bal_qty ?? r.balanceQty ?? r.balance_qty ?? 0,
+          balValue:
+            r.balValue ?? r.bal_value ?? r.balanceValue ?? r.balance_value ?? "",
+          unitValue: r.unitValue ?? r.unit_value ?? r.unitVal ?? 0,
+
+          // strings
+          office: r.office ?? r.office_name ?? r.officeName ?? "Unassigned",
+          areMeNo: r.areMeNo ?? r.are_me_no ?? r.areNo ?? r.meNo ?? "",
+
+          // date
+          createdAt:
+            r.createdAt ?? r.created_at ?? r.createdOn ?? r.created_on ?? "",
+        }));
+
+        setRows(normalized);
+
       } finally {
         setLoading(false);
       }
     };
+
     load();
   }, []);
 
@@ -39,7 +68,7 @@ export default function Dashboard() {
     }, 0);
 
     const byOffice = rows.reduce((acc, r) => {
-      const office = (r.office ?? "Unassigned").trim() || "Unassigned";
+      const office = String(r.office ?? "Unassigned").trim() || "Unassigned";
       acc[office] = (acc[office] || 0) + 1;
       return acc;
     }, {});
@@ -51,7 +80,9 @@ export default function Dashboard() {
 
     const recent = rows
       .slice()
-      .sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")))
+      .sort((a, b) =>
+        String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""))
+      )
       .slice(0, 5);
 
     return { totalRecords, totalQty, totalValue, topOffice, missingAre, recent };
@@ -62,13 +93,21 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Records" value={loading ? "…" : stats.totalRecords} />
-        <StatCard label="Total Qty" value={loading ? "…" : stats.totalQty} hint="Sum of Bal. Qty" />
+        <StatCard
+          label="Total Qty"
+          value={loading ? "…" : stats.totalQty}
+          hint="Sum of Bal. Qty"
+        />
         <StatCard
           label="Total Value"
           value={loading ? "…" : stats.totalValue.toLocaleString()}
           hint="Bal. Value (fallback = Unit Value × Qty)"
         />
-        <StatCard label="Top Office" value={loading ? "…" : stats.topOffice} hint="Most records" />
+        <StatCard
+          label="Top Office"
+          value={loading ? "…" : stats.topOffice}
+          hint="Most records"
+        />
       </div>
 
       {/* Alerts + Recent */}
@@ -78,7 +117,9 @@ export default function Dashboard() {
           <div className="mt-3 space-y-2 text-sm text-gray-700">
             <div className="flex items-center justify-between">
               <span>Missing ARE/ME No.</span>
-              <span className="font-semibold">{loading ? "…" : stats.missingAre}</span>
+              <span className="font-semibold">
+                {loading ? "…" : stats.missingAre}
+              </span>
             </div>
           </div>
         </div>
@@ -96,7 +137,10 @@ export default function Dashboard() {
               <div className="py-6 text-sm text-gray-500">No records yet.</div>
             ) : (
               stats.recent.map((r) => (
-                <div key={r.id} className="py-3">
+                <div
+                  key={r.id ?? r.propNumber ?? JSON.stringify(r)}
+                  className="py-3"
+                >
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-gray-900">
