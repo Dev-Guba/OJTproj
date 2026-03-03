@@ -1,9 +1,19 @@
 import Http from "./Http.js";
 
+const toArray = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.records)) return payload.records;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  if (Array.isArray(payload?.result)) return payload.result;
+  if (Array.isArray(payload?.data?.records)) return payload.data.records;
+  return [];
+};
+
 export const recordsApi = {
-  async getAll() {
+  getAll: async () => {
     const res = await Http.get("/records");
-    return res.data;
+    return toArray(res.data); 
   },
 
   async create(payload) {
@@ -21,14 +31,12 @@ export const recordsApi = {
     return res.data;
   },
 
-  // ✅ PDF report (Puppeteer)
-  // returns the full axios response (needed for headers + blob)
   generateReport(payload) {
     return Http.post("/records/report", payload, {
-      responseType: "blob", // ✅ important for PDF
-      headers: {
-        Accept: "application/pdf",
-      },
+      responseType: "blob",
+      headers: { Accept: "application/pdf" },
     });
   },
 };
+
+export default recordsApi;

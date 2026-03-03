@@ -8,7 +8,7 @@ import Button from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext";
 
 // ✅ background image (make sure the filename matches exactly)
-import bgImage from "../assets/Login_background.JPG";
+import bgImage from "../../assets/Login_background.JPG";
 
 export default function Login() {
   const navigate = useNavigate();

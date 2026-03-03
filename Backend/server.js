@@ -1,11 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
-import hpp from "hpp";
 
+import helmet from "helmet";
 import { seedAdminIfMissing } from "./src/seed/seedAdmin.js";
 import sequelize from "./src/config/db.js";
 import adminRoutes from "./src/routes/adminRoute.js";
@@ -18,18 +17,6 @@ dotenv.config();
 const app = express();
 
 app.set("trust proxy", 1); 
-/* ==============================
-   🔐 SECURITY HEADERS
-============================== */
-app.use(helmet());
-
-app.use(
-  helmet.hsts({
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  })
-);
 
 /* ==============================
    🔐 CORS (STRICT)
@@ -48,10 +35,7 @@ app.use(
 ============================== */
 app.use(express.json({ limit: "10kb" }));
 
-/* ==============================
-   🔐 Prevent HTTP Parameter Pollution
-============================== */
-app.use(hpp());
+app.use(helmet());
 
 
 /* ==============================
@@ -86,7 +70,7 @@ app.get("/health", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
+    
 async function startServer() {
   try {
     await sequelize.authenticate();
