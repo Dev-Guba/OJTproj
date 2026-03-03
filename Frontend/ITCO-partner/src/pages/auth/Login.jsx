@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-import Input from "../components/ui/Input";
-import Button from "../components/ui/Button";
-import { useAuth } from "../context/AuthContext";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import { useAuth } from "../../context/AuthContext";
 
 // ✅ background image (make sure the filename matches exactly)
 import bgImage from "../assets/Login_background.JPG";

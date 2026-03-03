@@ -4,7 +4,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
 import Modal from "../components/ui/Modal";
-import RecordsTable from "../components/records/RecordsTable";
+import RecordsTable from "./records/RecordsTable";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
