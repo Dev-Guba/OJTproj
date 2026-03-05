@@ -12,6 +12,7 @@ const User = sequelize.define(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true
     },
     password: {
       type: DataTypes.STRING,
@@ -20,10 +21,14 @@ const User = sequelize.define(
     role_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references:{
+        model: "Role",
+        key: "role_id"
+      }
     },
   },
   {
-    timestamps: false,
+    timestamps: true,
   }
 );
 

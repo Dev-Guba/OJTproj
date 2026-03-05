@@ -16,7 +16,7 @@ const sequelize = new Sequelize(
     dialect: "mssql",
     dialectOptions: {
       options: {
-        encrypt: false,
+        encrypt: true,
         trustServerCertificate: true,
       },
     },

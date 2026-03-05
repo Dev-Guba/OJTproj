@@ -26,3 +26,25 @@ cd Backend
 npm install sequelize sequelize-cli tedious
 npx sequelize-cli init
 ```
+
+### Migration ###
+
+
+```bash
+cd Backend
+npx sequelize-cli db:migrate
+```
+
+### Undo:Migration ###
+
+```bash
+cd Backend
+npx sequelize-cli db:undo
+```
+
+### SEED DATABASE ###
+
+```bash
+cd Backend
+npx sequelize-cli db:seed:all
+```
