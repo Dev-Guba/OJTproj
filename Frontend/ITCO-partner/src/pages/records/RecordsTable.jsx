@@ -1,4 +1,7 @@
-import Button from "../ui/Button";
+import Button from "../../components/ui/Button";
+import { useState, useEffect } from "react";
+import API from "../../api/records.api.js";
+
 
 export default function RecordsTable({
   rows = [],
@@ -34,6 +37,22 @@ export default function RecordsTable({
       {children}
     </td>
   );
+
+  const [records, setRecords] = useState([]);
+
+ 
+    useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const res = await API.getAll();
+      console.log("API Response:", res);
+      setRecords(Array.isArray(res) ? res : []);
+    } catch (error) {
+      console.error("API Error:", error);
+    }
+  };
+  fetchData();
+}, []);
 
   return (
     <div className="overflow-x-auto">
@@ -83,26 +102,26 @@ export default function RecordsTable({
 </thead>
 
         <tbody>
-          {rows.length === 0 ? (
+          {records.length === 0 ? (
             <tr>
               <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
                 No records found.
               </td>
             </tr>
           ) : (
-            rows.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition">
-                <Td>{item.article ?? ""}</Td>
-                <Td>{item.description ?? ""}</Td>
-                <Td className="font-medium">{item.propNumber ?? ""}</Td>
-                <Td>{item.dateAcquired ?? ""}</Td>
-                <Td>{item.unit ?? ""}</Td>
-                <Td>{item.unitValue ?? ""}</Td>
-                <Td className="text-center">{item.balQty ?? ""}</Td>
-                <Td className="text-center">{item.balValue ?? ""}</Td>
-                <Td>{item.accountableOfficer ?? ""}</Td>
-                <Td>{item.areMeNo ?? ""}</Td>
-                <Td>{item.office ?? ""}</Td>
+            records.map((record) => (
+              <tr key={record.id} className="hover:bg-gray-50 transition">
+                <Td>{record.article ?? ""}</Td>
+                <Td>{record.description ?? ""}</Td>
+                <Td className="font-medium">{record.propNumber ?? ""}</Td>
+                <Td>{record.dateAcquired ?? ""}</Td>
+                <Td>{record.unit ?? ""}</Td>
+                <Td>{record.unitValue ?? ""}</Td>
+                <Td className="text-center">{record.balQty ?? ""}</Td>
+                <Td className="text-center">{record.balValue ?? ""}</Td>
+                <Td>{record.accountableOfficer ?? ""}</Td>
+                <Td>{record.areMeNo ?? ""}</Td>
+                <Td>{record.office ?? ""}</Td>
 
                 {/* Actions cell */}
                 <Td className="text-center">
@@ -110,14 +129,14 @@ export default function RecordsTable({
                     <Button
                       variant="ghost"
                       type="button"
-                      onClick={() => onEdit?.(item.id)}
+                      onClick={() => onEdit?.(record.id)}
                     >
                       Edit
                     </Button>
                     <Button
                       variant="danger"
                       type="button"
-                      onClick={() => onDelete?.(item.id)}
+                      onClick={() => onDelete?.(record.id)}
                     >
                       Delete
                     </Button>

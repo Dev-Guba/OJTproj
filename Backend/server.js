@@ -1,62 +1,92 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
+import slowDown from "express-slow-down";
 
+import helmet from "helmet";
+import { seedAdminIfMissing } from "./src/seed/seedAdmin.js";
 import sequelize from "./src/config/db.js";
 import adminRoutes from "./src/routes/adminRoute.js";
 import recordRoutes from "./src/routes/recordRoute.js";
 
-// Load models BEFORE sync
 import "./src/models/index.js";
 
 dotenv.config();
 
 const app = express();
 
-// ✅ CORS must be BEFORE routes
+app.set("trust proxy", 1); 
+
+/* ==============================
+   🔐 CORS (STRICT)
+============================== */
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Disposition"], 
+    exposedHeaders: ["Content-Disposition"],
   })
 );
 
+/* ==============================
+   🔐 BODY LIMIT (Anti-DDoS)
+============================== */
+app.use(express.json({ limit: "10kb" }));
+
+app.use(helmet());
 
 
-app.use(express.json());
+/* ==============================
+   🔐 RATE LIMITING (Global)
+============================== */
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // 200 requests per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
 
-// Routes
+/* ==============================
+   🔐 SLOW DOWN (Bot protection)
+============================== */
+const speedLimiter = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 100,
+  delayMs:() => 500,
+});
+app.use(speedLimiter);
+
+/* ==============================
+   ROUTES
+============================== */
 app.use("/admin", adminRoutes);
 app.use("/records", recordRoutes);
 
-// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "Backend is running" });
 });
 
 const PORT = process.env.PORT || 3000;
-
+    
 async function startServer() {
   try {
-    console.log("DB_HOST:", process.env.DB_HOST);
-    console.log("DB_NAME:", process.env.DB_NAME);
-    console.log("DB_USER:", process.env.DB_USER);
-
     await sequelize.authenticate();
-    console.log("✅ Database connected successfully.");
-
-    console.log("Loaded models:", Object.keys(sequelize.models));
+    console.log("✅ Database connected.");
 
     await sequelize.sync({ alter: true });
-    console.log("✅ Tables synced successfully.");
+    console.log("✅ Tables synced.");
+
+    // await seedAdminIfMissing();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Unable to start server:", error);
+    console.error("❌ Server start failed.");
+    console.log(error);
     process.exit(1);
   }
 }

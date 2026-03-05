@@ -17,9 +17,11 @@ function formatDate(v) {
 export function buildRecordsReportHtml({
   rows,
   includeHeader,
-  printed,
-  filterLine,
-  totalRecords,
+  
+
+  // ✅ NEW: pass image src as data-uri from controller
+  officialSealSrc = "",
+  bagongPilipinasSrc = "",
 }) {
   const body = rows.length
     ? rows
@@ -43,6 +45,33 @@ export function buildRecordsReportHtml({
         .join("")
     : `<tr><td colspan="11" class="empty">No records found.</td></tr>`;
 
+  const govtHeader = `
+    <div class="gov-header">
+      <div class="logos">
+        ${
+          officialSealSrc
+            ? `<img class="logo" src="${officialSealSrc}" alt="Official Seal" />`
+            : ""
+        }
+        ${
+          bagongPilipinasSrc
+            ? `<img class="logo" src="${bagongPilipinasSrc}" alt="Bagong Pilipinas" />`
+            : ""
+        }
+      </div>
+
+      <div class="gov-text">
+        <div class="gov-line">REPUBLIC OF THE PHILIPPINES</div>
+        <div class="gov-line">PROVINCE OF CEBU</div>
+        <div class="gov-line bold">PROVINCIAL ADMINISTRATOR'S OFFICE</div>
+        <div class="gov-line">2/F East Wing, Provincial Capitol, N. Escario St., Cebu City 6000 Philippines</div>
+        <div class="gov-line">Telephone (032) 888-2333/(032) 888-2328 local 1031 &amp; 1039</div>
+
+      
+      </div>
+    </div>
+  `;
+
   return `<!doctype html>
 <html>
   <head>
@@ -55,14 +84,72 @@ export function buildRecordsReportHtml({
         font-size: 11px;
       }
 
-      .title { font-size: 18px; font-weight: 800; margin: 0 0 6px 0; }
-      .meta  { font-size: 11px; color: #444; margin: 0 0 10px 0; line-height: 1.35; }
+      /* ✅ Try to load Cinzel (works if Puppeteer can access internet) */
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&display=swap');
 
-      /* ✅ TABLE: fixed layout + widths to prevent header text combining */
+      /* =========================
+         ✅ GOVERNMENT HEADER
+         ========================= */
+      .gov-header{
+        display:flex;
+        gap:14px;
+        align-items:flex-start;
+        padding-bottom:10px;
+        margin-bottom:10px;
+        border-bottom:1px solid #e5e7eb; /* gray-200 */
+      }
+
+      .logos{
+       
+        display:flex;
+        flex-direction:row;
+        align-items:center;
+        gap:12px;
+        flex: 0 0 auto;
+      }
+
+      .logo{
+        width:70px;
+        height:auto;
+        object-fit:contain;
+      }
+
+      .gov-text{
+        flex:1;
+        min-width:0;
+      }
+
+      .gov-line{
+        line-height:1.25;
+        margin:0;
+        white-space:normal;
+      }
+
+      .bold{ font-weight:800;}
+
+
+      .gov-line.bold{
+        font-size:14px;
+        letter-spacing:0.5px;
+      }
+
+
+
+
+      .report-meta{
+        margin-top:8px;
+        font-size:11px;
+        color:#444;
+        line-height:1.35;
+      }
+
+      /* =========================
+         ✅ TABLE (your style)
+         ========================= */
       table.tbl {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed; /* ✅ IMPORTANT */
+        table-layout: fixed;
         border: 1px solid #9ca3af;
       }
 
@@ -70,8 +157,8 @@ export function buildRecordsReportHtml({
         border: 1px solid #9ca3af;
         padding: 8px;
         vertical-align: top;
-        overflow: hidden;          /* ✅ prevents overlap */
-        text-overflow: ellipsis;   /* ✅ trims nicely */
+        overflow: hidden;
+        text-overflow: ellipsis;
         word-break: break-word;
       }
 
@@ -79,7 +166,7 @@ export function buildRecordsReportHtml({
         background: #f9fafb;
         color: #374151;
         font-weight: 700;
-        white-space: nowrap; /* ✅ keeps header readable */
+        white-space: nowrap;
       }
 
       .center { text-align: center; }
@@ -92,19 +179,19 @@ export function buildRecordsReportHtml({
         padding: 16px;
       }
 
-      /* ✅ ARLEE row */
+      /* ✅ ARLEE row  */
       .arleeRow {
-  height: 40px;                  /* h-10 */
-  background: #bae6fd;           /* bg-sky-200 */
-  color: #b91c1c;                /* text-red-700 */
-  font-size: 24px;               /* text-2xl */
-  font-weight: 700;              /* font-bold */
-  text-align: center;            /* text-center */
-  padding: 0 16px;               /* px-4 py-0 */
-  line-height: 40px;             /* leading-none */
-  letter-spacing: 2px;           /* letterSpacing */
-  font-family: 'Cinzel', serif;  /* wood style */
-}
+        height: 30px;
+        background: #bae6fd;           /* sky-200 */
+        color: #b91c1c;                /* red-700-ish */
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+        padding: 0 16px;
+        line-height: 40px;
+        letter-spacing: 2px;
+        font-family: 'Cinzel', serif;
+      }
 
       .tight { line-height: 1.1; display: inline-block; }
     </style>
@@ -113,19 +200,11 @@ export function buildRecordsReportHtml({
   <body>
     ${
       includeHeader
-        ? `
-      <div class="title">ICTO Records Report</div>
-      <div class="meta">
-        <div>Printed: ${escapeHtml(printed)}</div>
-        <div>Filters: ${escapeHtml(filterLine)}</div>
-        <div>Total Records: ${totalRecords}</div>
-      </div>
-    `
+        ? govtHeader
         : ``
     }
 
     <table class="tbl">
-      <!-- ✅ Fixed widths for each of the 11 columns -->
       <colgroup>
         <col style="width:10%">
         <col style="width:14%">
@@ -164,10 +243,9 @@ export function buildRecordsReportHtml({
           <th class="center">Value</th>
         </tr>
 
-        <!-- ✅ Always-visible Info Row -->
         <tr>
           <th colspan="11" class="arleeRow">
-            ARLEE CARLOS (Information Technology Officer I)
+            ARLEE CARLO S. (Information Technology Officer I)
           </th>
         </tr>
       </thead>

@@ -1,14 +1,20 @@
 import express from "express";
+import { requireAuth, requireRole} from "../middleware/authMiddleware.js";
+
 import {
-  getAllRecords,
-  getRecordById,
-  createRecord,
-  updateRecord,
-  deleteRecord,
-  generateRecordsReportPdf,
+  handleCreateRecords,
+  handleDeleteRecords,
+  handleRecords,
+  handleUpdateRecords,
+  handleGetRecordID,
 } from "../controller/recordController.js";
 
-import { requireAuth } from "../middleware/authMiddleware.js";
+import {
+  generateRecordsReportPdf
+} from "../services/recordServices.js"
+
+import  verifyToken  from "../middleware/verifyToken.js";
+
 import { validate } from "../middleware/validate.js";
 import {
   recordCreateSchema,
@@ -19,15 +25,13 @@ import {
 const router = express.Router();
 
 router.use(requireAuth);
+router.use(requireRole(1)); // ✅ admin-only
 
-router.get("/", getAllRecords);
-
-// ✅ IMPORTANT: put this BEFORE "/:id"
+router.get("/", handleRecords);
 router.post("/report", generateRecordsReportPdf);
-
-router.get("/:id", validate(recordIdParamSchema), getRecordById);
-router.post("/", validate(recordCreateSchema), createRecord);
-router.put("/:id", validate(recordUpdateSchema), updateRecord);
-router.delete("/:id", validate(recordIdParamSchema), deleteRecord);
+router.get("/:id", validate(recordIdParamSchema), handleGetRecordID);
+router.post("/create", validate(recordCreateSchema), handleCreateRecords);
+router.put("/:id", validate(recordUpdateSchema), handleUpdateRecords);
+router.delete("/:id", validate(recordIdParamSchema), handleDeleteRecords);
 
 export default router;
