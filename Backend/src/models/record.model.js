@@ -22,9 +22,18 @@ const Record = sequelize.define(
     balQty: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
     balValue: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
 
-    accountableOfficer: { type: DataTypes.STRING, allowNull: false },
-    areMeNo: { type: DataTypes.STRING, allowNull: true },
-    office: { type: DataTypes.STRING, allowNull: true },
+    accountableOfficer: 
+    { 
+      type: DataTypes.STRING, allowNull: false 
+    },
+    areMeNo: 
+    { 
+      type: DataTypes.STRING, allowNull: true 
+    },
+    office: 
+    { 
+      type: DataTypes.STRING, allowNull: true 
+    },
   },
   {
     timestamps: true,
