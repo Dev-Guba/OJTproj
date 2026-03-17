@@ -1,7 +1,8 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../ui/Button";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ROLES } from "../../utils/roles";
 
 const NavItem = ({ to, label, icon, onClick }) => (
   <NavLink
@@ -9,17 +10,18 @@ const NavItem = ({ to, label, icon, onClick }) => (
     onClick={onClick}
     className={({ isActive }) =>
       [
-        "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
+        "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition",
         isActive
-          ? "bg-gray-900 text-white active"
-          : "text-gray-700 hover:bg-gray-100",
+          ? "bg-blue-600 text-white shadow-sm active"
+          : "text-slate-700 hover:bg-blue-50 hover:text-blue-700",
       ].join(" ")
     }
   >
     <span
       className={[
-        "grid h-8 w-8 place-items-center rounded-lg text-base",
-        "bg-gray-100 text-gray-700 group-[.active]:bg-white/10 group-[.active]:text-white",
+        "grid h-9 w-9 place-items-center rounded-xl text-base transition",
+        "bg-slate-100 text-slate-600",
+        "group-[.active]:bg-white/15 group-[.active]:text-white",
       ].join(" ")}
     >
       {icon}
@@ -30,20 +32,25 @@ const NavItem = ({ to, label, icon, onClick }) => (
 
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { pathname } = useLocation();
 
+  const isSuperAdmin = user?.role_id === ROLES.SUPER_ADMIN;
+  const isAdmin = user?.role_id === ROLES.ADMIN;
+  const canManageRecords = isSuperAdmin || isAdmin;
+
   const manageActive = useMemo(() => {
-    return pathname.startsWith("/dashboard/view") || pathname.startsWith("/dashboard/add");
+    return (
+      pathname.startsWith("/dashboard/view") ||
+      pathname.startsWith("/dashboard/add")
+    );
   }, [pathname]);
 
-  // default open when you're inside manage records routes
- const [manageOpen, setManageOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
 
-useMemo(() => {
-  if (manageActive) setManageOpen(true);
-}, [manageActive]);
-
+  useEffect(() => {
+    if (manageActive) setManageOpen(true);
+  }, [manageActive]);
 
   const closeMobile = () => onClose?.();
 
@@ -51,20 +58,19 @@ useMemo(() => {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          className="fixed inset-0 z-30 bg-slate-900/30 md:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={[
-          "fixed md:static z-40 h-screen w-72 shrink-0 border-r bg-white px-4 py-5",
+          "fixed md:static z-40 h-screen w-72 shrink-0 border-r border-slate-200 bg-white px-4 py-5",
           "transition-transform md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         ].join(" ")}
       >
         <div className="flex h-full flex-col">
-          {/* Logo (clickable to dashboard) */}
           <button
             type="button"
             onClick={() => {
@@ -73,36 +79,36 @@ useMemo(() => {
             }}
             className="mb-6 w-full text-left"
           >
-            <div className="flex items-center gap-3 rounded-2xl p-2 hover:bg-gray-50">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gray-900 text-white">
+            <div className="flex items-center gap-3 rounded-2xl p-2 hover:bg-slate-50">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-600 text-white shadow-sm">
                 A
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-900">
+                <div className="text-sm font-semibold text-slate-900">
                   Asset Manager
                 </div>
-                <div className="text-xs text-gray-500">Admin Panel</div>
+                <div className="text-xs text-slate-500">Admin Panel</div>
               </div>
             </div>
           </button>
 
-          {/* Navigation */}
-          <div className="space-y-1">
-            {/* Manage Records Dropdown */}
+          <div className="space-y-2">
             <button
               type="button"
               onClick={() => setManageOpen((v) => !v)}
               className={[
-                "w-full group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition text-left",
-                manageActive ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100",
+                "w-full group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition text-left",
+                manageActive
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-700 hover:bg-blue-50 hover:text-blue-700",
               ].join(" ")}
             >
               <span
                 className={[
-                  "grid h-8 w-8 place-items-center rounded-lg text-base",
+                  "grid h-9 w-9 place-items-center rounded-xl text-base transition",
                   manageActive
-                    ? "bg-white/10 text-white"
-                    : "bg-gray-100 text-gray-700",
+                    ? "bg-white/15 text-white"
+                    : "bg-slate-100 text-slate-600",
                 ].join(" ")}
               >
                 ≡
@@ -110,28 +116,54 @@ useMemo(() => {
 
               <span className="font-medium flex-1">Manage Records</span>
 
-              <span className={["text-xs transition-transform", manageOpen ? "rotate-180" : ""].join(" ")}>
+              <span
+                className={[
+                  "text-xs transition-transform",
+                  manageOpen ? "rotate-180" : "",
+                ].join(" ")}
+              >
                 ▼
               </span>
             </button>
 
             {manageOpen && (
-                <div className="mt-2 ml-6 space-y-1">
+              <div className="mt-1 ml-6 space-y-1.5">
                 <NavItem
-                to="/dashboard/view"
-                label="View Records"
-                icon="•"
-                onClick={closeMobile}
-              />
+                  to="/dashboard/view"
+                  label="View Records"
+                  icon="•"
+                  onClick={closeMobile}
+                />
 
-               <NavItem
-                to="/dashboard/add"
-                label="Add Record"
-                icon="•"
-                 onClick={closeMobile}
-              />    
+                {canManageRecords && (
+                  <NavItem
+                    to="/dashboard/add"
+                    label="Add Record"
+                    icon="•"
+                    onClick={closeMobile}
+                  />
+                )}
               </div>
             )}
+
+            {isSuperAdmin && (
+              <NavItem
+                to="/dashboard/admins"
+                label="Admin Management"
+                icon="👥"
+                onClick={closeMobile}
+              />
+            )}
+
+            {isSuperAdmin && (
+              <NavItem
+                to="/dashboard/offices"
+                label="Office Management"
+                icon="🏢"
+                onClick={closeMobile}
+              />
+            )}
+
 
             <NavItem
               to="/dashboard/settings"
@@ -141,11 +173,19 @@ useMemo(() => {
             />
           </div>
 
-          {/* Logout at bottom */}
-          <div className="mt-auto">
+          
+
+          <div className="mt-auto pt-4">
+            <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <div className="text-xs text-slate-500">Signed in as</div>
+              <div className="mt-1 text-sm font-medium text-slate-800 break-all">
+                {user?.email ?? "User"}
+              </div>
+            </div>
+
             <Button
-              variant="ghost"
-              className="w-full justify-start border-t pt-4"
+              variant="outline"
+              className="w-full justify-start"
               onClick={logout}
             >
               ⎋ Logout

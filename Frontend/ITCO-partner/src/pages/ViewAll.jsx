@@ -1,23 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { recordsApi } from "../api/records.api";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
-import Select from "../components/ui/Select";
 import Modal from "../components/ui/Modal";
 import RecordsTable from "./records/RecordsTable";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
+import { ROLES } from "../utils/roles";
 
 const PAGE_SIZE = 8;
 
 export default function ViewAll() {
+const { user } = useAuth();
+const isSuperAdmin = user?.role_id === ROLES.SUPER_ADMIN;
+const isAdmin = user?.role_id === ROLES.ADMIN;
+const isEmployee = user?.role_id === ROLES.EMPLOYEE;
+
+const canManageRecords = isSuperAdmin || isAdmin;
+
   const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
-  const [officeFilter, setOfficeFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ key: "createdAt", dir: "desc" });
   const [confirm, setConfirm] = useState({ open: false, id: null });
-
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
   // ✅ Report modal state
   const [reportOpen, setReportOpen] = useState(false);
   const [reportPaper, setReportPaper] = useState("auto"); // auto | a4 | letter
@@ -29,97 +40,80 @@ export default function ViewAll() {
 
   // Load data
   const loadData = async () => {
-    try {
-      const data = await recordsApi.getAll();
-      setItems(Array.isArray(data) ? data : []);
-    } catch {
-      toast.error("Failed to load records.");
-    }
-  };
+  try {
+    setLoading(true);
+    setError("");
+
+    const res = await recordsApi.getAll({
+      page,
+      limit: PAGE_SIZE,
+      search: debouncedSearch,
+      sortKey: sort.key,
+      sortDir: sort.dir
+    });
+
+    setItems(res.rows || []);
+    setTotal(res.total || 0);
+
+  } catch {
+    setError("Failed to load records.");
+  } finally {
+    setLoading(false);
+  }
+};
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 400);
+
+  return () => clearTimeout(timer);
+}, [search]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [page, debouncedSearch, sort]);
 
-  // Filter + Sort
-  const filtered = useMemo(() => {
-    let data = [...items];
-
-    if (officeFilter !== "All") {
-      data = data.filter((x) => String(x.office ?? "").trim() === officeFilter);
-    }
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      data = data.filter(
-        (x) =>
-          String(x.propNumber ?? "").toLowerCase().includes(q) ||
-          String(x.accountableOfficer ?? "").toLowerCase().includes(q) ||
-          String(x.article ?? "").toLowerCase().includes(q) ||
-          String(x.description ?? "").toLowerCase().includes(q) ||
-          String(x.office ?? "").toLowerCase().includes(q)
-      );
-    }
-
-    data.sort((a, b) => {
-      const av = a[sort.key] ?? "";
-      const bv = b[sort.key] ?? "";
-
-      if (typeof av === "number" && typeof bv === "number") {
-        return sort.dir === "asc" ? av - bv : bv - av;
-      }
-
-      return sort.dir === "asc"
-        ? String(av).localeCompare(String(bv))
-        : String(bv).localeCompare(String(av));
-    });
-
-    return data;
-  }, [items, search, officeFilter, sort]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  
   const changeSort = (key) => {
-    setSort((prev) =>
-      prev.key === key
-        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
-        : { key, dir: "asc" }
-    );
-  };
+  setPage(1);
+  setSort((prev) =>
+    prev.key === key
+      ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+      : { key, dir: "asc" }
+  );
+};
 
   const handleDelete = async () => {
-    try {
-      await recordsApi.remove(confirm.id);
-      toast.success("Record removed.");
-      setConfirm({ open: false, id: null });
-      loadData();
-    } catch {
-      toast.error("Delete failed.");
-    }
-  };
+  try {
+    await recordsApi.remove(confirm.id);
+    toast.success("Record removed.");
+    setConfirm({ open: false, id: null });
 
-  const officeOptions = useMemo(() => {
-    const set = new Set();
-    items.forEach((x) => {
-      const v = String(x.office ?? "").trim();
-      if (v) set.add(v);
-    });
-    return ["All", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
-  }, [items]);
+    const isLastItemOnPage = items.length === 1 && page > 1;
+
+    if (isLastItemOnPage) {
+      setPage((p) => p - 1);
+    } else {
+      loadData();
+    }
+  } catch {
+    toast.error("Delete failed.");
+  }
+};
+
 
   // ✅ Existing download logic (Step 2 will pass report options into backend)
   const onGenerateReport = async () => {
     const t = toast.loading("Generating PDF report...");
     try {
       const res = await recordsApi.generateReport({
-        search,
-        office: officeFilter,
-        paperSize: reportPaper,
-        perPage: reportPerPage,
-        includeHeader: reportIncludeHeader,
-        includePageNumbers: reportIncludePageNumbers,
-      });
+  search: debouncedSearch,
+  paperSize: reportPaper,
+  perPage: reportPerPage,
+  includeHeader: reportIncludeHeader,
+  includePageNumbers: reportIncludePageNumbers,
+});
 
       const blob = new Blob([res.data], { type: "application/pdf" });
 
@@ -164,22 +158,7 @@ export default function ViewAll() {
             />
           </div>
 
-          <div className="w-full md:w-64">
-            <Select
-              label="Filter (Office)"
-              value={officeFilter}
-              onChange={(e) => {
-                setOfficeFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              {officeOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </Select>
-          </div>
+          
         </div>
 
         <div className="md:ml-auto">
@@ -189,11 +168,36 @@ export default function ViewAll() {
         </div>
       </div>
 
+      {error && (
+  <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {error}
+  </div>
+)}
+
+
+{/* Office Admin label */}
+{!isSuperAdmin && user?.SameDeptCode && (
+  <div className="rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+    Viewing records for: <span className="font-semibold">{user.SameDeptCode}</span>
+  </div>
+)}
+
+{/* Super Admin label */}
+{isSuperAdmin && (
+  <div className="rounded border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-700">
+    Viewing records for: <span className="font-semibold">All Offices (Super Admin)</span>
+  </div>
+)}
+
+{/* Table Card */}
+<div className="border bg-white shadow-sm overflow-hidden"></div>
       {/* Table Card */}
       <div className="border bg-white shadow-sm overflow-hidden">
         <RecordsTable
-          rows={paginated}
+          rows={items}
           sort={sort}
+          loading={loading}
+          canManageRecords={canManageRecords}
           onSort={changeSort}
           onEdit={(id) => navigate(`/dashboard/add?edit=${id}`)}
           onDelete={(id) => setConfirm({ open: true, id })}
@@ -202,7 +206,7 @@ export default function ViewAll() {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
           <div className="text-xs text-gray-500">
-            Page {page} of {totalPages} • {filtered.length} record(s)
+            Page {page} of {totalPages} • {total} record(s)
           </div>
 
           <div className="flex gap-2">
