@@ -1,4 +1,4 @@
-import { success } from 'zod';
+
 import {
 getAllRecords, 
 getRecordById,
@@ -7,7 +7,7 @@ updateRecord,
 deleteRecord
 }
 from '../services/recordServices.js';
-import { json } from 'sequelize';
+
 
 /* ======================
    CRUD
@@ -15,7 +15,7 @@ import { json } from 'sequelize';
 
 export async function handleGetRecordID(req, res){
   try {
-    const record = await getRecordById(Number(req.params.id));
+    const record = await getRecordById(Number(req.params.id), req.user);
     if (!record){
       return res
       .status(404)
@@ -32,11 +32,18 @@ export async function handleGetRecordID(req, res){
 
 export async function handleRecords(req, res) {
   try {
-    const records = await getAllRecords();
-    return res.status(200).json({success: true ,message: "Successfully fetch", data: records});
+
+    const result = await getAllRecords(req.user, req.query);
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully fetch",
+      ...result
+    });
+
   } catch (err) {
-    console.log("Cannot get records ",err);
-    return res.status(500).json({error: "Server Error"});
+    console.log("Cannot get records ", err);
+    return res.status(500).json({ error: "Server Error" });
   }
 }
 
@@ -44,7 +51,7 @@ export async function handleCreateRecords(req,res){
   try {
     const data = req.body;
     console.log(data);
-    const result = await createRecord(data);
+    const result = await createRecord(data, req.user);
     console.log(result);
 
     return res.status(201).json({
@@ -61,7 +68,7 @@ export async function handleCreateRecords(req,res){
 export async function handleUpdateRecords(req,res){
   try {
     const id = (Number(req.params.id));
-    const existing = await getRecordById(id);
+    const existing = await getRecordById(id, req.user);
 
     if(!existing){
       return res
@@ -73,14 +80,15 @@ export async function handleUpdateRecords(req,res){
     }
     const data = req.body;
         const result = await updateRecord(
-          Number(req.params.id),
-          data,
-        );
+  Number(req.params.id),
+  data,
+  req.user
+);
       return res
         .status(200)
         .json({
           success: true,
-          message: "Record successfully created",
+          message: "Record successfully updated",
           data: result,
         });
   } catch (err) {
@@ -92,7 +100,7 @@ export async function handleUpdateRecords(req,res){
 export async function handleDeleteRecords(req, res){
   try {
     const id = (Number(req.params.id));
-    const existing = await getRecordById(id);
+    const existing = await getRecordById(id, req.user);
     if(!existing){
       return res
       .status(404)
@@ -102,7 +110,7 @@ export async function handleDeleteRecords(req, res){
       });
     }
 
-    await deleteRecord(id);
+    await deleteRecord(id, req.user);
     return res
     .status(200)
     .json({

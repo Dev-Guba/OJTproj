@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 export async function seedAdminIfMissing() {
   const email = process.env.DEFAULT_ADMIN_EMAIL;
   const password = process.env.DEFAULT_ADMIN_PASSWORD;
-  const roleId = Number(process.env.DEFAULT_ADMIN_ROLE_ID || 1);
+  const roleId = Number(process.env.DEFAULT_ADMIN_ROLE_ID || 0);
 
   if (!email || !password) {
     console.log("⚠️ DEFAULT_ADMIN_EMAIL or DEFAULT_ADMIN_PASSWORD not set.");

@@ -1,28 +1,29 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/db";
+import sequelize from "../config/db.js";
 
 const Status = sequelize.define(
-    "CPTStatus", {
-        statusId : {
-        type : sequelize.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-
-      statusCode : {
-        type: sequelize.STRING(50),
-        allowNull: false
-      },
-
-      statusDesc : {
-        typle : sequelize.STRING(50),
-        allowNull: false,
-        unique: true
-      },
+  "CPTStatus",
+  {
+    statusId: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
     },
-    {
-        timestamps: false
-    }
-)
+
+    statusCode: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+
+    statusDesc: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+    },
+  },
+  {
+    timestamps: false,
+  }
+);
 
 export default Status;

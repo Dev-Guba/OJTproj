@@ -1,16 +1,12 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
+
 const Employee = sequelize.define(
   "Employees",
   {
-    EmployeeId: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    EmployeeNo: { type: DataTypes.STRING(20), allowNull: false, unique: true },
-
-    statusId: {
-      type: DataTypes.INTEGER,
-      references: { model: "Status", key: "statusId" }
-    },
+    
+    EmployeeNo: { type: DataTypes.STRING(20), allowNull: false, primaryKey: true },
     role_id: {
       type: DataTypes.INTEGER,
       references: { model: "CPTRoles", key: "role_id" }
@@ -156,8 +152,6 @@ const Employee = sequelize.define(
   {
     tableName: "Employees",
     timestamps: true,
-    createdAt: "createdAt",
-    updatedAt: "updatedAt",
   }
 );
 
