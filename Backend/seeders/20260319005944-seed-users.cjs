@@ -18,14 +18,6 @@ module.exports = {
         EmployeeId: 1,
         role_id: 1
       },
-      {
-        EmployeeId: 2,
-        role_id: 2
-      },
-      {
-        EmployeeId: 3,
-        role_id: 3
-      }
     ], {});
   },
 
@@ -38,7 +30,7 @@ module.exports = {
      */
 
     await queryInterface.bulkDelete('CPTUsers', {
-      EmployeeId: [1,2,3]
-    }, {})
+      EmployeeId: [1],
+    }, {});
   }
 };

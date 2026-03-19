@@ -26,7 +26,7 @@ export async function handleGetRecordID(req, res){
     }
     res.status(200).json({success: true, data: record})
   } catch (error) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 }
 

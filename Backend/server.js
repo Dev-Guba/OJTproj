@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import employeeRoutes from "./src/routes/employeeRoutes.js";
 import officeRoutes from "./src/routes/officeRoute.js";
+import superAdminRoutes from "./src/routes/superAdminRoute.js";
 
 import helmet from "helmet";
 import { seedAdminIfMissing } from "./src/seed/seedAdmin.js";
@@ -52,6 +53,7 @@ app.use(speedLimiter);
 app.use("/admin", adminRoutes);
 app.use("/records", recordRoutes);
 app.use("/offices", officeRoutes);
+app.use("/superadmin", superAdminRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "Backend is running" });
@@ -64,7 +66,7 @@ async function startServer() {
     await sequelize.authenticate();
     console.log("✅ Database connected.");
 
-    await seedAdminIfMissing();
+    // await seedAdminIfMissing();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);

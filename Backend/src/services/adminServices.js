@@ -26,6 +26,22 @@ export async function findAdminById(id) {
   });
 }
 
+export async function findAdminByEmployeeNo(employeeNo) {
+  return await User.findOne({
+    where: { 
+      EmployeeNo: employeeNo,
+    }
+  });
+}
+
+export async function checkEmployeeNoIsActive(employeeNo) {
+  const employee = await findAdminByEmployeeNo(employeeNo);
+  if (!employee) return false;
+
+  const statusId = employee.Employee.statusId;
+  return statusId === 1; // Assuming 1 is the active status ID
+}
+
 export async function findAdminByEmail(email) {
   return await User.findOne({
     where: {
