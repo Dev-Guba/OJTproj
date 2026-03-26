@@ -61,24 +61,41 @@ export async function deleteOffice(officeId) {
 
 export async function getOfficeDetails(officeId) {
   const office = await Office.findByPk(officeId);
-
   if (!office) return null;
 
   const admins = await User.findAll({
     where: {
       SameDeptCode: office.code,
-      role_id: {
-        [Op.in]: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
+      role_id: ROLES.ADMIN,
     },
-    attributes: ["user_id", "email", "SameDeptCode", "EmployeeNo", "role_id"],
-    include: {
-      model: Employee,
-      attributes: ["EmployeeNo", "FirstName", "LastName", "SameDeptCode"],
-      required: false,
-    },
+    attributes: ["user_id", "email", "EmployeeId", "EmployeeNo", "SameDeptCode", "role_id"],
     order: [["user_id", "ASC"]],
+    raw: true,
   });
+
+  const adminEmployeeIds = admins.map((a) => a.EmployeeId).filter(Boolean);
+
+  let adminEmployees = [];
+  if (adminEmployeeIds.length > 0) {
+    adminEmployees = await Employee.findAll({
+      where: {
+        EmployeeId: {
+          [Op.in]: adminEmployeeIds,
+        },
+      },
+      attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "SameDeptCode"],
+      raw: true,
+    });
+  }
+
+  const adminEmployeeMap = new Map(
+    adminEmployees.map((e) => [e.EmployeeId, e])
+  );
+
+  const adminsWithEmployee = admins.map((admin) => ({
+    ...admin,
+    Employee: admin.EmployeeId ? adminEmployeeMap.get(admin.EmployeeId) || null : null,
+  }));
 
   const employees = await Employee.findAll({
     where: {
@@ -86,35 +103,35 @@ export async function getOfficeDetails(officeId) {
       DateFinish: null,
       SeparationType: null,
     },
-    attributes: ["EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode"],
+    attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode"],
     order: [["LastName", "ASC"], ["FirstName", "ASC"]],
+    raw: true,
   });
 
-  const employeeNos = employees.map((emp) => emp.EmployeeNo).filter(Boolean);
+  const employeeIds = employees.map((e) => e.EmployeeId).filter(Boolean);
 
   let employeeAccounts = [];
-  if (employeeNos.length > 0) {
+  if (employeeIds.length > 0) {
     employeeAccounts = await User.findAll({
       where: {
-        EmployeeNo: {
-          [Op.in]: employeeNos,
+        EmployeeId: {
+          [Op.in]: employeeIds,
         },
       },
-      attributes: ["user_id", "email", "EmployeeNo", "role_id"],
+      attributes: ["user_id", "email", "EmployeeId", "role_id", "SameDeptCode"],
       raw: true,
     });
   }
 
   const accountMap = new Map(
-    employeeAccounts.map((acc) => [acc.EmployeeNo, acc])
+    employeeAccounts.map((acc) => [acc.EmployeeId, acc])
   );
 
   const employeesWithAccountStatus = employees.map((emp) => {
-    const plain = emp.toJSON();
-    const linkedAccount = accountMap.get(emp.EmployeeNo);
+    const linkedAccount = accountMap.get(emp.EmployeeId);
 
     return {
-      ...plain,
+      ...emp,
       hasAccount: !!linkedAccount,
       account: linkedAccount || null,
     };
@@ -122,7 +139,7 @@ export async function getOfficeDetails(officeId) {
 
   return {
     office,
-    admins,
+    admins: adminsWithEmployee,
     employees: employeesWithAccountStatus,
   };
 }

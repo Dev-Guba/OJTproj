@@ -17,7 +17,7 @@ export async function login(req, res) {
     const admin = await findAdminByEmail(email);
 
     if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
+      return res.status(404).json({ message: "Account not found" });
     }
 
     const isMatch = await bcrypt.compare(password, admin.password);
@@ -28,24 +28,38 @@ export async function login(req, res) {
     const sameDeptCode =
       admin.SameDeptCode ?? admin.Employee?.SameDeptCode ?? null;
 
+    const firstName =
+      admin.Employee?.FirstName ?? null;
+
+    const lastName =
+      admin.Employee?.LastName ?? null;
+
     const token = jwt.sign(
       {
         id: admin.user_id,
         role_id: admin.role_id,
         SameDeptCode: sameDeptCode,
+        firstName,
+        lastName,
+        EmployeeId: admin.EmployeeId ?? null,
+        EmployeeNo: admin.EmployeeNo ?? null,
       },
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "6h" }
     );
 
     return res.status(200).json({
-      message: "Admin login successful",
+      message: "Login successful",
       token,
       user: {
         user_id: admin.user_id,
         email: admin.email,
         role_id: admin.role_id,
         SameDeptCode: sameDeptCode,
+        firstName,
+        lastName,
+        EmployeeId: admin.EmployeeId ?? null,
+        EmployeeNo: admin.EmployeeNo ?? null,
       },
     });
   } catch (err) {

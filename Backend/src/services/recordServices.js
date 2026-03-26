@@ -10,7 +10,6 @@ import { ROLES } from "../constants/roles.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Utility: read image as base64 for PDF header
 function toDataUriPng(absPath) {
   try {
     const buf = fs.readFileSync(absPath);
@@ -20,14 +19,13 @@ function toDataUriPng(absPath) {
   }
 }
 
-// ----------- CRUD -----------
-
 function getEmployeeFullName(user) {
   const firstName =
     user?.firstName ??
     user?.FirstName ??
     user?.Employee?.FirstName ??
     "";
+
   const lastName =
     user?.lastName ??
     user?.LastName ??
@@ -42,12 +40,10 @@ function buildRecordScopeWhere(user) {
     throw new Error("Authenticated user not found.");
   }
 
-  // Super Admin = all records
   if (user.role_id === ROLES.SUPER_ADMIN) {
     return {};
   }
 
-  // Admin = office records only
   if (user.role_id === ROLES.ADMIN) {
     if (!user.SameDeptCode) {
       throw new Error("User has no SameDeptCode.");
@@ -58,7 +54,6 @@ function buildRecordScopeWhere(user) {
     };
   }
 
-  // Employee = only records assigned to them
   if (user.role_id === ROLES.EMPLOYEE) {
     const fullName = getEmployeeFullName(user);
 
@@ -74,11 +69,12 @@ function buildRecordScopeWhere(user) {
   return {};
 }
 
+// ----------- CRUD -----------
+
 export async function getAllRecords(user, query = {}) {
   const page = Number(query.page) || 1;
   const limit = Number(query.limit) || 8;
   const offset = (page - 1) * limit;
-
   const search = String(query.search ?? "").trim();
 
   const allowedSortKeys = [
@@ -98,7 +94,7 @@ export async function getAllRecords(user, query = {}) {
 
   const sortKey = allowedSortKeys.includes(query.sortKey)
     ? query.sortKey
-    : "createdAt";
+    : "office";
 
   const sortDir =
     String(query.sortDir).toLowerCase() === "asc" ? "ASC" : "DESC";
@@ -107,6 +103,7 @@ export async function getAllRecords(user, query = {}) {
 
   if (search) {
     where[Op.and] = [
+      ...(where[Op.and] || []),
       {
         [Op.or]: [
           { article: { [Op.like]: `%${search}%` } },
@@ -124,7 +121,12 @@ export async function getAllRecords(user, query = {}) {
     where,
     limit,
     offset,
-    order: [[sortKey, sortDir]],
+    order: [
+      ["office", "ASC"],
+      ["accountableOfficer", "ASC"],
+      ["article", "ASC"],
+      ["createdAt", "DESC"],
+    ],
   });
 
   return {
@@ -145,7 +147,7 @@ export async function getRecordById(id, user) {
     ...buildRecordScopeWhere(user),
   };
 
-  return Record.findOne({ where });
+  return await Record.findOne({ where });
 }
 
 export async function createRecord(data, user) {
@@ -167,7 +169,7 @@ export async function createRecord(data, user) {
     payload.office = user.SameDeptCode;
   }
 
-  return Record.create(payload);
+  return await Record.create(payload);
 }
 
 export async function updateRecord(id, data, user) {
@@ -192,7 +194,7 @@ export async function updateRecord(id, data, user) {
     payload.office = user.SameDeptCode;
   }
 
-  return record.update(payload);
+  return await record.update(payload);
 }
 
 export async function deleteRecord(id, user) {
@@ -235,6 +237,7 @@ export async function generateRecordsReportPdf(req, res) {
 
     if (search) {
       where[Op.and] = [
+        ...(where[Op.and] || []),
         {
           [Op.or]: [
             { article: { [Op.like]: `%${search}%` } },
@@ -250,7 +253,12 @@ export async function generateRecordsReportPdf(req, res) {
 
     const rows = await Record.findAll({
       where,
-      order: [["createdAt", "DESC"]],
+      order: [
+        ["office", "ASC"],
+        ["accountableOfficer", "ASC"],
+        ["article", "ASC"],
+        ["createdAt", "DESC"],
+      ],
     });
 
     const assetsDir = path.join(__dirname, "..", "assets");
@@ -290,15 +298,11 @@ export async function generateRecordsReportPdf(req, res) {
         bottom: includePageNumbers ? "50px" : "24px",
         left: "24px",
       },
+      format:
+        paperSize === "letter"
+          ? "Letter"
+          : "A4",
     };
-
-    if (paperSize === "a4") {
-      pdfOptions.format = "A4";
-    } else if (paperSize === "letter") {
-      pdfOptions.format = "Letter";
-    } else {
-      pdfOptions.format = "A4";
-    }
 
     const pdf = await page.pdf(pdfOptions);
 

@@ -30,6 +30,12 @@ const Api = {
       },
     });
   },
+
+  getOffices: (params = {}) => {
+    return Http.get("/offices", { params });
+  },
 };
+
+
 
 export default Api;
