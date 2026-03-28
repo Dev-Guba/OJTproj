@@ -12,7 +12,7 @@ const Record = sequelize.define(
 
     article: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
-
+    
     propNumber: { type: DataTypes.STRING, allowNull: false },
     dateAcquired: { type: DataTypes.DATEONLY, allowNull: false },
 
