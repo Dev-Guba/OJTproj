@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import Input from "../components/ui/Input";
-import Textarea from "../components/ui/TextArea";
-import Select from "../components/ui/Select";
-import Button from "../components/ui/Button";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { recordsApi } from "../api/records.api";
+import employeeApi from "../api/employee.api";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { ROLES } from "../utils/roles";
+import RecordForm from "../components/records/RecordForm";
 
 const empty = {
   article: "",
@@ -18,81 +18,145 @@ const empty = {
   balValue: "",
   accountableOfficer: "",
   areMeNo: "",
-  office: "Admin Office",
-
-  // legacy (optional)
-  value: "",
-  quantity: "",
+  office: "",
 };
 
 export default function AddArticle() {
+  const { user } = useAuth();
+  const isAdmin = user?.role_id === ROLES.ADMIN;
+
   const [form, setForm] = useState(empty);
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const load = async () => {
-      if (!editId) return;
+  const set = (key) => (e) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
-      try {
-        const all = await recordsApi.getAll();
-        const item = all.find((x) => String(x.id) === String(editId));
+  const loadEmployees = async () => {
+    try {
+      setLoadingEmployees(true);
+      const res = await employeeApi.getAll({ limit: 200 });
+      const list = res.data?.employees || res.employees || [];
+      setEmployees(list);
+    } catch {
+      toast.error("Failed to load employees.");
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
 
-        if (!item) {
-          toast.error("Record not found.");
-          navigate("/dashboard/view");
-          return;
-        }
+  const loadRecordForEdit = async () => {
+    if (!editId) return;
 
-        setForm({
-          article: item.article ?? "",
-          description: item.description ?? "",
-          propNumber: item.propNumber ?? "",
-          dateAcquired: item.dateAcquired ?? "",
+    try {
+      const res = await recordsApi.getAll({ page: 1, limit: 500 });
+      const rows = res.rows || [];
+      const item = rows.find((x) => String(x.id) === String(editId));
 
-          unit: item.unit ?? "",
-          unitValue: item.unitValue == null ? "" : String(item.unitValue),
-          balQty: item.balQty == null ? "" : String(item.balQty),
-          balValue: item.balValue == null ? "" : String(item.balValue),
-
-          accountableOfficer: item.accountableOfficer ?? "",
-          areMeNo: item.areMeNo ?? "",
-          office: item.office ?? "Admin Office",
-
-          value: item.value == null ? "" : String(item.value),
-          quantity: item.quantity == null ? "" : String(item.quantity),
-        });
-      } catch {
-        toast.error("Failed to load record.");
+      if (!item) {
+        toast.error("Record not found.");
         navigate("/dashboard/view");
+        return;
       }
-    };
 
-    load();
-  }, [editId, navigate]);
+      setForm({
+        article: item.article ?? "",
+        description: item.description ?? "",
+        propNumber: item.propNumber ?? "",
+        dateAcquired: item.dateAcquired ?? "",
+        unit: item.unit ?? "",
+        unitValue: item.unitValue == null ? "" : String(item.unitValue),
+        balQty: item.balQty == null ? "" : String(item.balQty),
+        balValue: item.balValue == null ? "" : String(item.balValue),
+        accountableOfficer: item.accountableOfficer ?? "",
+        areMeNo: item.areMeNo ?? "",
+        office: item.office ?? "",
+      });
 
-  const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+      const matchedEmployee = employees.find(
+        (emp) =>
+          `${emp.FirstName ?? ""} ${emp.LastName ?? ""}`.trim() ===
+          (item.accountableOfficer ?? "").trim()
+      );
+
+      if (matchedEmployee) {
+        setSelectedEmployeeId(String(matchedEmployee.EmployeeId));
+      }
+    } catch {
+      toast.error("Failed to load record.");
+      navigate("/dashboard/view");
+    }
+  };
+
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (!editId && isAdmin && user?.SameDeptCode) {
+      setForm((prev) => ({
+        ...prev,
+        office: user.SameDeptCode,
+      }));
+    }
+  }, [editId, isAdmin, user?.SameDeptCode]);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      loadRecordForEdit();
+    }
+  }, [editId, employees]);
+
+  const employeeOptions = useMemo(() => {
+    return employees.map((emp) => ({
+      value: String(emp.EmployeeId),
+      label: `${[emp.FirstName, emp.LastName].filter(Boolean).join(" ")} — ${emp.EmployeeNo} — ${emp.SameDeptCode}`,
+      raw: emp,
+    }));
+  }, [employees]);
+
+  const handleEmployeeChange = (e) => {
+    const employeeId = e.target.value;
+    setSelectedEmployeeId(employeeId);
+
+    const emp = employees.find(
+      (item) => String(item.EmployeeId) === String(employeeId)
+    );
+
+    if (!emp) return;
+
+    setForm((prev) => ({
+      ...prev,
+      accountableOfficer: `${emp.FirstName ?? ""} ${emp.LastName ?? ""}`.trim(),
+      office: emp.SameDeptCode ?? prev.office,
+    }));
+  };
 
   const validate = () => {
     if (!(form.article || "").trim()) return "Article is required.";
     if (!(form.propNumber || "").trim()) return "Prop number is required.";
     if (!form.dateAcquired) return "Date acquired is required.";
-    if (!(form.accountableOfficer || "").trim())
-      return "Accountable officer is required.";
+    if (!(form.accountableOfficer || "").trim()) {
+      return "Please select an employee.";
+    }
 
-    if (form.unitValue !== "" && Number.isNaN(Number(form.unitValue)))
+    if (form.unitValue !== "" && Number.isNaN(Number(form.unitValue))) {
       return "Unit value must be a number.";
-    if (form.balQty !== "" && Number.isNaN(Number(form.balQty)))
-      return "Balance qty must be a number.";
-    if (form.balValue !== "" && Number.isNaN(Number(form.balValue)))
-      return "Balance value must be a number.";
+    }
 
-    if (form.value !== "" && Number.isNaN(Number(form.value)))
-      return "Value must be a number.";
-    if (form.quantity !== "" && Number.isNaN(Number(form.quantity)))
-      return "Quantity must be a number.";
+    if (form.balQty !== "" && Number.isNaN(Number(form.balQty))) {
+      return "Balance qty must be a number.";
+    }
+
+    if (form.balValue !== "" && Number.isNaN(Number(form.balValue))) {
+      return "Balance value must be a number.";
+    }
 
     return null;
   };
@@ -101,7 +165,10 @@ export default function AddArticle() {
     e.preventDefault();
 
     const err = validate();
-    if (err) return toast.error(err);
+    if (err) {
+      toast.error(err);
+      return;
+    }
 
     setLoading(true);
 
@@ -110,28 +177,27 @@ export default function AddArticle() {
       description: (form.description || "").trim(),
       propNumber: (form.propNumber || "").trim(),
       dateAcquired: form.dateAcquired,
-
       unit: (form.unit || "").trim(),
       unitValue: form.unitValue === "" ? null : Number(form.unitValue),
       balQty: form.balQty === "" ? null : Number(form.balQty),
       balValue: form.balValue === "" ? null : Number(form.balValue),
-
       accountableOfficer: (form.accountableOfficer || "").trim(),
       areMeNo: (form.areMeNo || "").trim(),
-      office: form.office || "Admin Office",
-
-      value: form.value === "" ? null : Number(form.value),
-      quantity: form.quantity === "" ? null : Number(form.quantity),
+      office: (form.office || "").trim(),
     };
 
     try {
       if (editId) {
         await recordsApi.update(editId, payload);
-        toast.success("Updated successfully!");
+        toast.success("Updated successfully.");
       } else {
         await recordsApi.create(payload);
-        toast.success("Submitted successfully!");
-        setForm(empty);
+        toast.success("Submitted successfully.");
+        setForm({
+          ...empty,
+          office: isAdmin ? user?.SameDeptCode || "" : "",
+        });
+        setSelectedEmployeeId("");
       }
 
       navigate("/dashboard/view");
@@ -144,81 +210,18 @@ export default function AddArticle() {
 
   return (
     <div className="max-w-4xl">
-      <form
+      <RecordForm
+        form={form}
+        employeeOptions={employeeOptions}
+        selectedEmployeeId={selectedEmployeeId}
+        loading={loading}
+        loadingEmployees={loadingEmployees}
+        editMode={!!editId}
+        onFieldChange={set}
+        onEmployeeChange={handleEmployeeChange}
         onSubmit={onSubmit}
-        className="rounded-2xl border bg-white p-5 shadow-sm"
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Article" value={form.article ?? ""} onChange={set("article")} />
-          <Input label="Prop No." value={form.propNumber ?? ""} onChange={set("propNumber")} />
-
-          <Input
-            label="Date Acquired"
-            type="date"
-            value={form.dateAcquired ?? ""}
-            onChange={set("dateAcquired")}
-          />
-          <Input
-            label="Accountable Officer"
-            value={form.accountableOfficer ?? ""}
-            onChange={set("accountableOfficer")}
-          />
-
-          <Input label="Unit" value={form.unit ?? ""} onChange={set("unit")} />
-          <Input
-            label="Unit Value"
-            type="number"
-            value={form.unitValue ?? ""}
-            onChange={set("unitValue")}
-          />
-
-          <Input
-            label="Bal. Qty (per Stockcard)"
-            type="number"
-            value={form.balQty ?? ""}
-            onChange={set("balQty")}
-          />
-          <Input
-            label="Bal. Value (per Stockcard)"
-            type="number"
-            value={form.balValue ?? ""}
-            onChange={set("balValue")}
-          />
-
-          <Input label="ARE No. / ME No." value={form.areMeNo ?? ""} onChange={set("areMeNo")} />
-
-          <Select
-            label="Office"
-            value={form.office ?? "Admin Office"}
-            onChange={set("office")}
-          >
-            <option>Admin Office</option>
-            <option>ICTO</option>
-            <option>HR Office</option>
-            <option>Finance Office</option>
-            <option>Operations Office</option>
-            <option>Other</option>
-          </Select>
-
-          <div className="md:col-span-2">
-            <Textarea
-              label="Description"
-              rows={3}
-              value={form.description ?? ""}
-              onChange={set("description")}
-            />
-          </div>
-        </div>
-
-        <div className="mt-5 flex gap-2">
-          <Button type="submit" disabled={loading}>
-            {editId ? "Update" : "Submit"}
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => navigate("/dashboard/view")}>
-            Cancel
-          </Button>
-        </div>
-      </form>
+        onCancel={() => navigate("/dashboard/view")}
+      />
     </div>
   );
 }

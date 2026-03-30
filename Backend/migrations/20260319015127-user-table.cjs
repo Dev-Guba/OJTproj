@@ -18,6 +18,7 @@ module.exports = {
       },
       EmployeeId: {
         type: Sequelize.INTEGER,
+        allowNull: true,
         references:{
           model: "Employees",
           key: "EmployeeId"
@@ -28,12 +29,12 @@ module.exports = {
 
       role_id: {
         type: Sequelize.INTEGER,
-        references:{
-          model: "CPTRoles",
-          key: "role_id"  
+        references: {
+        model: "CPTRoles",
+        key: "role_id"
         },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL"
+        onDelete: "CASCADE"
       },
     });
   },

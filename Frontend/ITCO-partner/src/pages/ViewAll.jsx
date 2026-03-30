@@ -1,86 +1,82 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { recordsApi } from "../api/records.api";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
-import Select from "../components/ui/Select";
-import Modal from "../components/ui/Modal";
 import RecordsTable from "./records/RecordsTable";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
+import { ROLES } from "../utils/roles";
+import RecordsToolbar from "../components/records/RecordsToolbar";
+import RecordsScopeAlert from "../components/records/RecordsScopeAlert";
+import RecordsPagination from "../components/records/RecordsPagination";
+import ReportOptionsModal from "../components/records/ReportOptionsModal";
+import DeleteRecordModal from "../components/records/DeleteRecordModal";
 
 const PAGE_SIZE = 8;
 
 export default function ViewAll() {
-  const [items, setItems] = useState([]);
-  const [search, setSearch] = useState("");
-  const [officeFilter, setOfficeFilter] = useState("All");
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState({ key: "createdAt", dir: "desc" });
-  const [confirm, setConfirm] = useState({ open: false, id: null });
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role_id === ROLES.SUPER_ADMIN;
+  const isAdmin = user?.role_id === ROLES.ADMIN;
+  const isEmployee = user?.role_id === ROLES.EMPLOYEE;
 
-  // ✅ Report modal state
+  const canManageRecords = isSuperAdmin || isAdmin;
+
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState({ key: "office", dir: "asc" });
+  const [confirm, setConfirm] = useState({ open: false, id: null });
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportPaper, setReportPaper] = useState("auto"); // auto | a4 | letter
+  const [reportPaper, setReportPaper] = useState("auto");
   const [reportPerPage, setReportPerPage] = useState(20);
   const [reportIncludeHeader, setReportIncludeHeader] = useState(true);
   const [reportIncludePageNumbers, setReportIncludePageNumbers] = useState(true);
 
   const navigate = useNavigate();
 
-  // Load data
   const loadData = async () => {
     try {
-      const data = await recordsApi.getAll();
-      setItems(Array.isArray(data) ? data : []);
+      setLoading(true);
+      setError("");
+
+      const res = await recordsApi.getAll({
+        page,
+        limit: PAGE_SIZE,
+        search: debouncedSearch,
+        sortKey: sort.key,
+        sortDir: sort.dir,
+      });
+
+      setItems(res.rows || []);
+      setTotal(res.total || 0);
     } catch {
-      toast.error("Failed to load records.");
+      setError("Failed to load records.");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [page, debouncedSearch, sort]);
 
-  // Filter + Sort
-  const filtered = useMemo(() => {
-    let data = [...items];
-
-    if (officeFilter !== "All") {
-      data = data.filter((x) => String(x.office ?? "").trim() === officeFilter);
-    }
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      data = data.filter(
-        (x) =>
-          String(x.propNumber ?? "").toLowerCase().includes(q) ||
-          String(x.accountableOfficer ?? "").toLowerCase().includes(q) ||
-          String(x.article ?? "").toLowerCase().includes(q) ||
-          String(x.description ?? "").toLowerCase().includes(q) ||
-          String(x.office ?? "").toLowerCase().includes(q)
-      );
-    }
-
-    data.sort((a, b) => {
-      const av = a[sort.key] ?? "";
-      const bv = b[sort.key] ?? "";
-
-      if (typeof av === "number" && typeof bv === "number") {
-        return sort.dir === "asc" ? av - bv : bv - av;
-      }
-
-      return sort.dir === "asc"
-        ? String(av).localeCompare(String(bv))
-        : String(bv).localeCompare(String(av));
-    });
-
-    return data;
-  }, [items, search, officeFilter, sort]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const changeSort = (key) => {
+    setPage(1);
     setSort((prev) =>
       prev.key === key
         ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
@@ -93,28 +89,24 @@ export default function ViewAll() {
       await recordsApi.remove(confirm.id);
       toast.success("Record removed.");
       setConfirm({ open: false, id: null });
-      loadData();
+
+      const isLastItemOnPage = items.length === 1 && page > 1;
+
+      if (isLastItemOnPage) {
+        setPage((p) => p - 1);
+      } else {
+        loadData();
+      }
     } catch {
       toast.error("Delete failed.");
     }
   };
 
-  const officeOptions = useMemo(() => {
-    const set = new Set();
-    items.forEach((x) => {
-      const v = String(x.office ?? "").trim();
-      if (v) set.add(v);
-    });
-    return ["All", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
-  }, [items]);
-
-  // ✅ Existing download logic (Step 2 will pass report options into backend)
   const onGenerateReport = async () => {
     const t = toast.loading("Generating PDF report...");
     try {
       const res = await recordsApi.generateReport({
-        search,
-        office: officeFilter,
+        search: debouncedSearch,
         paperSize: reportPaper,
         perPage: reportPerPage,
         includeHeader: reportIncludeHeader,
@@ -137,7 +129,7 @@ export default function ViewAll() {
       window.URL.revokeObjectURL(url);
 
       toast.success("Report downloaded.", { id: t });
-    } catch (e) {
+    } catch {
       toast.error("Failed to generate report.", { id: t });
     }
   };
@@ -149,187 +141,69 @@ export default function ViewAll() {
 
   return (
     <div className="space-y-6">
-      {/* Controls Row: left = search+filter, right = report button */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="flex w-full flex-col gap-3 md:flex-row md:items-end">
-          <div className="w-full md:w-96">
-            <Input
-              label="Search"
-              placeholder="Search by Article, Prop No., Officer, Office..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </div>
+      <RecordsToolbar
+        search={search}
+        onSearchChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
+        onOpenReport={() => setReportOpen(true)}
+      />
 
-          <div className="w-full md:w-64">
-            <Select
-              label="Filter (Office)"
-              value={officeFilter}
-              onChange={(e) => {
-                setOfficeFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              {officeOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </Select>
-          </div>
+      {error && (
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      )}
 
-        <div className="md:ml-auto">
-          <Button type="button" onClick={() => setReportOpen(true)}>
-            Generate Report
-          </Button>
-        </div>
-      </div>
+      <RecordsScopeAlert
+        isSuperAdmin={isSuperAdmin}
+        isAdmin={isAdmin}
+        isEmployee={isEmployee}
+        user={user}
+      />
 
-      {/* Table Card */}
       <div className="border bg-white shadow-sm overflow-hidden">
         <RecordsTable
-          rows={paginated}
+          rows={items}
           sort={sort}
+          loading={loading}
+          canManageRecords={canManageRecords}
           onSort={changeSort}
           onEdit={(id) => navigate(`/dashboard/add?edit=${id}`)}
           onDelete={(id) => setConfirm({ open: true, id })}
         />
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-          <div className="text-xs text-gray-500">
-            Page {page} of {totalPages} • {filtered.length} record(s)
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="ghost" disabled={page === 1} onClick={() => setPage(1)}>
-              First
-            </Button>
-
-            <Button
-              variant="ghost"
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Prev
-            </Button>
-
-            <Button
-              variant="ghost"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </Button>
-
-            <Button
-              variant="ghost"
-              disabled={page === totalPages}
-              onClick={() => setPage(totalPages)}
-            >
-              Last
-            </Button>
-          </div>
-        </div>
+        <RecordsPagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onFirst={() => setPage(1)}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          onLast={() => setPage(totalPages)}
+        />
       </div>
 
-      {/* ✅ Report Options Modal */}
-      <Modal
+      <ReportOptionsModal
         open={reportOpen}
-        title="Generate Report"
+        reportPaper={reportPaper}
+        reportPerPage={reportPerPage}
+        reportIncludeHeader={reportIncludeHeader}
+        reportIncludePageNumbers={reportIncludePageNumbers}
         onClose={() => setReportOpen(false)}
         onConfirm={confirmGenerateReport}
-        confirmText="Generate"
-      >
-        <div className="space-y-5">
-          <div>
-            <div className="text-sm font-semibold text-gray-900">Paper Size:</div>
-            <div className="mt-2 space-y-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="paper"
-                  checked={reportPaper === "auto"}
-                  onChange={() => setReportPaper("auto")}
-                />
-                <span>Auto</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="paper"
-                  checked={reportPaper === "a4"}
-                  onChange={() => setReportPaper("a4")}
-                />
-                <span>A4</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="paper"
-                  checked={reportPaper === "letter"}
-                  onChange={() => setReportPaper("letter")}
-                />
-                <span>Letter</span>
-              </label>
-            </div>
-          </div>
+        setReportPaper={setReportPaper}
+        setReportPerPage={setReportPerPage}
+        setReportIncludeHeader={setReportIncludeHeader}
+        setReportIncludePageNumbers={setReportIncludePageNumbers}
+      />
 
-          <div>
-            <div className="text-sm font-semibold text-gray-900">Records Per Page:</div>
-            <div className="mt-2">
-              <select
-                className="w-32 rounded-xl border px-3 py-2 text-sm"
-                value={reportPerPage}
-                onChange={(e) => setReportPerPage(Number(e.target.value))}
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-sm font-semibold text-gray-900">Include:</div>
-            <div className="mt-2 space-y-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={reportIncludeHeader}
-                  onChange={(e) => setReportIncludeHeader(e.target.checked)}
-                />
-                <span>Header</span>
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={reportIncludePageNumbers}
-                  onChange={(e) => setReportIncludePageNumbers(e.target.checked)}
-                />
-                <span>Page Numbers</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteRecordModal
         open={confirm.open}
-        title="Remove this item?"
         onClose={() => setConfirm({ open: false, id: null })}
         onConfirm={handleDelete}
-        confirmText="Remove"
-      >
-        This action will permanently remove the record from storage.
-      </Modal>
+      />
     </div>
   );
 }

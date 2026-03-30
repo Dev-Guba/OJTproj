@@ -20,24 +20,29 @@ export default function Login() {
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.email.trim() || !form.password) {
-      toast.error("Please enter your email and password.");
-      return;
-    }
+  e.preventDefault();
 
-    setLoading(true);
-    const ok = await login({ email: form.email.trim(), password: form.password });
+  if (!form.email.trim() || !form.password) {
+    toast.error("Please enter your email and password.");
+    return;
+  }
 
-    if (ok) {
-      toast.success("Login successful!");
-      navigate("/dashboard", { replace: true });
-    } else {
-      toast.error("Invalid credentials.");
-    }
+  setLoading(true);
 
-    setLoading(false);
-  };
+  const result = await login({
+    email: form.email.trim(),
+    password: form.password,
+  });
+
+  if (result.ok) {
+    toast.success("Login successful!");
+    navigate("/dashboard", { replace: true });
+  } else {
+    toast.error(result.error || "Invalid credentials.");
+  }
+
+  setLoading(false);
+};
 
   return (
     <div

@@ -1,11 +1,11 @@
 import Button from "../../components/ui/Button";
-import { useState, useEffect } from "react";
-import API from "../../api/records.api.js";
 
 
 export default function RecordsTable({
   rows = [],
   sort,
+  loading,
+  canManageRecords,
   onSort,
   onEdit,
   onDelete,
@@ -37,22 +37,6 @@ export default function RecordsTable({
       {children}
     </td>
   );
-
-  const [records, setRecords] = useState([]);
-
- 
-    useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const res = await API.getAll();
-      console.log("API Response:", res);
-      setRecords(Array.isArray(res) ? res : []);
-    } catch (error) {
-      console.error("API Error:", error);
-    }
-  };
-  fetchData();
-}, []);
 
   return (
     <div className="overflow-x-auto">
@@ -102,14 +86,20 @@ export default function RecordsTable({
 </thead>
 
         <tbody>
-          {records.length === 0 ? (
-            <tr>
-              <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
-                No records found.
-              </td>
-            </tr>
-          ) : (
-            records.map((record) => (
+         {loading ? (
+  <tr>
+    <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
+      Loading records...
+    </td>
+  </tr>
+) : rows.length === 0 ? (
+  <tr>
+    <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
+      No records found.
+    </td>
+  </tr>
+) : (
+            rows.map((record) => (
               <tr key={record.id} className="hover:bg-gray-50 transition">
                 <Td>{record.article ?? ""}</Td>
                 <Td>{record.description ?? ""}</Td>
@@ -125,23 +115,27 @@ export default function RecordsTable({
 
                 {/* Actions cell */}
                 <Td className="text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      onClick={() => onEdit?.(record.id)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      type="button"
-                      onClick={() => onDelete?.(record.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </Td>
+  {canManageRecords ? (
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        variant="ghost"
+        type="button"
+        onClick={() => onEdit?.(record.id)}
+      >
+        Edit
+      </Button>
+      <Button
+        variant="danger"
+        type="button"
+        onClick={() => onDelete?.(record.id)}
+      >
+        Delete
+      </Button>
+    </div>
+  ) : (
+    <span className="text-gray-400">View Only</span>
+  )}
+</Td>
               </tr>
             ))
           )}

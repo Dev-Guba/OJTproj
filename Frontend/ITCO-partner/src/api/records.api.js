@@ -11,10 +11,10 @@ const toArray = (payload) => {
 };
 
 export const recordsApi = {
-  getAll: async () => {
-    const res = await Http.get("/records");
-    return toArray(res.data); 
-  },
+  getAll: async (params = {}) => {
+  const res = await Http.get("/records", { params });
+  return res.data;
+},
 
   async create(payload) {
     const res = await Http.post("/records", payload);

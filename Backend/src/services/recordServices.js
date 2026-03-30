@@ -5,11 +5,11 @@ import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { ROLES } from "../constants/roles.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Utility: read image as base64 for PDF header
 function toDataUriPng(absPath) {
   try {
     const buf = fs.readFileSync(absPath);
@@ -19,38 +19,196 @@ function toDataUriPng(absPath) {
   }
 }
 
-// Utility: chunk array (currently unused, but kept for pagination)
-function chunkArray(arr, size) {
-  const result = [];
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size));
+function getEmployeeFullName(user) {
+  const firstName =
+    user?.firstName ??
+    user?.FirstName ??
+    user?.Employee?.FirstName ??
+    "";
+
+  const lastName =
+    user?.lastName ??
+    user?.LastName ??
+    user?.Employee?.LastName ??
+    "";
+
+  return [firstName, lastName].filter(Boolean).join(" ").trim();
+}
+
+function buildRecordScopeWhere(user) {
+  if (!user) {
+    throw new Error("Authenticated user not found.");
   }
-  return result;
+
+  if (user.role_id === ROLES.SUPER_ADMIN) {
+    return {};
+  }
+
+  if (user.role_id === ROLES.ADMIN) {
+    if (!user.SameDeptCode) {
+      throw new Error("User has no SameDeptCode.");
+    }
+
+    return {
+      office: user.SameDeptCode,
+    };
+  }
+
+  if (user.role_id === ROLES.EMPLOYEE) {
+    const fullName = getEmployeeFullName(user);
+
+    if (!fullName) {
+      throw new Error("Employee full name is required for record filtering.");
+    }
+
+    return {
+      accountableOfficer: fullName,
+    };
+  }
+
+  return {};
 }
 
 // ----------- CRUD -----------
 
-export async function getAllRecords() {
-  return Record.findAll({ order: [["createdAt", "DESC"]] });
+export async function getAllRecords(user, query = {}) {
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 8;
+  const offset = (page - 1) * limit;
+  const search = String(query.search ?? "").trim();
+
+  const allowedSortKeys = [
+    "article",
+    "description",
+    "propNumber",
+    "dateAcquired",
+    "unit",
+    "unitValue",
+    "balQty",
+    "balValue",
+    "accountableOfficer",
+    "areMeNo",
+    "office",
+    "createdAt",
+  ];
+
+  const sortKey = allowedSortKeys.includes(query.sortKey)
+    ? query.sortKey
+    : "office";
+
+  const sortDir =
+    String(query.sortDir).toLowerCase() === "asc" ? "ASC" : "DESC";
+
+  const where = buildRecordScopeWhere(user);
+
+  if (search) {
+    where[Op.and] = [
+      ...(where[Op.and] || []),
+      {
+        [Op.or]: [
+          { article: { [Op.like]: `%${search}%` } },
+          { description: { [Op.like]: `%${search}%` } },
+          { propNumber: { [Op.like]: `%${search}%` } },
+          { accountableOfficer: { [Op.like]: `%${search}%` } },
+          { areMeNo: { [Op.like]: `%${search}%` } },
+          { office: { [Op.like]: `%${search}%` } },
+        ],
+      },
+    ];
+  }
+
+  const { rows, count } = await Record.findAndCountAll({
+    where,
+    limit,
+    offset,
+    order: [
+      ["office", "ASC"],
+      ["accountableOfficer", "ASC"],
+      ["article", "ASC"],
+      ["createdAt", "DESC"],
+    ],
+  });
+
+  return {
+    rows,
+    total: count,
+    page,
+    limit,
+  };
 }
 
-export async function getRecordById(id) {
-  return Record.findByPk(id);
+export async function getRecordById(id, user) {
+  if (!user) {
+    throw new Error("Authenticated user not found.");
+  }
+
+  const where = {
+    id,
+    ...buildRecordScopeWhere(user),
+  };
+
+  return await Record.findOne({ where });
 }
 
-export async function createRecord(data) {
-  return Record.create(data);
+export async function createRecord(data, user) {
+  if (!user) {
+    throw new Error("Authenticated user not found.");
+  }
+
+  if (user.role_id === ROLES.EMPLOYEE) {
+    throw new Error("Employees are not allowed to create records.");
+  }
+
+  const payload = { ...data };
+
+  if (user.role_id === ROLES.ADMIN) {
+    if (!user.SameDeptCode) {
+      throw new Error("User has no SameDeptCode.");
+    }
+
+    payload.office = user.SameDeptCode;
+  }
+
+  return await Record.create(payload);
 }
 
-export async function updateRecord(id, data) {
-  const record = await Record.findByPk(id);
+export async function updateRecord(id, data, user) {
+  if (!user) {
+    throw new Error("Authenticated user not found.");
+  }
+
+  if (user.role_id === ROLES.EMPLOYEE) {
+    throw new Error("Employees are not allowed to update records.");
+  }
+
+  const record = await getRecordById(id, user);
   if (!record) return null;
-  return record.update(data);
+
+  const payload = { ...data };
+
+  if (user.role_id === ROLES.ADMIN) {
+    if (!user.SameDeptCode) {
+      throw new Error("User has no SameDeptCode.");
+    }
+
+    payload.office = user.SameDeptCode;
+  }
+
+  return await record.update(payload);
 }
 
-export async function deleteRecord(id) {
-  const record = await Record.findByPk(id);
+export async function deleteRecord(id, user) {
+  if (!user) {
+    throw new Error("Authenticated user not found.");
+  }
+
+  if (user.role_id === ROLES.EMPLOYEE) {
+    throw new Error("Employees are not allowed to delete records.");
+  }
+
+  const record = await getRecordById(id, user);
   if (!record) return null;
+
   await record.destroy();
   return true;
 }
@@ -59,92 +217,111 @@ export async function deleteRecord(id) {
 
 export async function generateRecordsReportPdf(req, res) {
   let browser;
+
   try {
-    // Extract filters and options
     const search = String(req.body?.search ?? "").trim();
     const office = String(req.body?.office ?? "All").trim();
-    const paperSize = (req.body?.paperSize ?? "auto").toLowerCase();
+    const paperSize = String(req.body?.paperSize ?? "auto").toLowerCase();
     const includeHeader = req.body?.includeHeader !== false;
     const includePageNumbers = req.body?.includePageNumbers !== false;
 
-    // Build query
-    const where = {};
-    if (office !== "All") where.office = office;
+    if (!req.user) {
+      throw new Error("Authenticated user not found.");
+    }
+
+    const where = buildRecordScopeWhere(req.user);
+
+    if (req.user.role_id === ROLES.SUPER_ADMIN && office !== "All") {
+      where.office = office;
+    }
+
     if (search) {
-      where[Op.or] = [
-        { article: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } },
-        { propNumber: { [Op.like]: `%${search}%` } },
-        { accountableOfficer: { [Op.like]: `%${search}%` } },
-        { areMeNo: { [Op.like]: `%${search}%` } },
-        { office: { [Op.like]: `%${search}%` } },
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        {
+          [Op.or]: [
+            { article: { [Op.like]: `%${search}%` } },
+            { description: { [Op.like]: `%${search}%` } },
+            { propNumber: { [Op.like]: `%${search}%` } },
+            { accountableOfficer: { [Op.like]: `%${search}%` } },
+            { areMeNo: { [Op.like]: `%${search}%` } },
+            { office: { [Op.like]: `%${search}%` } },
+          ],
+        },
       ];
     }
 
-    // Fetch data
-    const rows = await Record.findAll({ where, order: [["createdAt", "DESC"]] });
+    const rows = await Record.findAll({
+      where,
+      order: [
+        ["office", "ASC"],
+        ["accountableOfficer", "ASC"],
+        ["article", "ASC"],
+        ["createdAt", "DESC"],
+      ],
+    });
 
-    // Logos
     const assetsDir = path.join(__dirname, "..", "assets");
-    const officialSealSrc = toDataUriPng(path.join(assetsDir, "Official_seal.png"));
-    const bagongPilipinasSrc = toDataUriPng(path.join(assetsDir, "bagong-pilipinas-logo.png"));
+    const officialSealSrc = toDataUriPng(
+      path.join(assetsDir, "Official_seal.png")
+    );
+    const bagongPilipinasSrc = toDataUriPng(
+      path.join(assetsDir, "Bagong_Pilipinas.png")
+    );
 
-    // Header meta
-    const printed = new Date().toLocaleString();
-    const filterLine = [search && `Search: ${search}`, office !== "All" && `Office: ${office}`]
-      .filter(Boolean)
-      .join(" • ") || "No filters";
-
-    // Build HTML
     const html = buildRecordsReportHtml({
       rows,
-      includeHeader,
-      printed,
-      filterLine,
-      totalRecords: rows.length,
+      search,
+      office:
+        req.user.role_id === ROLES.SUPER_ADMIN
+          ? office
+          : req.user.SameDeptCode ?? "N/A",
       officialSealSrc,
       bagongPilipinasSrc,
+      includeHeader,
+      includePageNumbers,
     });
 
-    // Launch Puppeteer
     browser = await puppeteer.launch({
-      headless: "new",
+      headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
+
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    // PDF options
     const pdfOptions = {
-      format: paperSize === "letter" ? "Letter" : "A4",
-      landscape: true,
       printBackground: true,
       margin: {
-        top: includeHeader ? "12mm" : "10mm",
-        bottom: includePageNumbers ? "14mm" : "10mm",
-        left: "10mm",
-        right: "10mm",
+        top: includeHeader ? "80px" : "30px",
+        right: "24px",
+        bottom: includePageNumbers ? "50px" : "24px",
+        left: "24px",
       },
-      displayHeaderFooter: includePageNumbers,
-      headerTemplate: `<div></div>`,
-      footerTemplate: includePageNumbers
-        ? `<div style="font-size:10px;width:100%;text-align:center;color:#444;padding:0 10px;">
-             Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-           </div>`
-        : undefined,
+      format:
+        paperSize === "letter"
+          ? "Letter"
+          : "A4",
     };
 
     const pdf = await page.pdf(pdfOptions);
 
-    // Send PDF
-    const filename = `ICTO-Records-Report-${Date.now()}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.send(pdf);
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="ICTO-Records-Report.pdf"'
+    );
+
+    return res.send(pdf);
   } catch (err) {
-    console.error("PDF generation error:", err);
-    res.status(500).json({ message: "Report generation failed", error: err.message });
+    console.error("Generate records report PDF error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate report",
+    });
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    if (browser) {
+      await browser.close();
+    }
   }
 }
