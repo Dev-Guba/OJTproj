@@ -5,34 +5,69 @@ const Record = sequelize.define(
   "ICTORecords",
   {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
 
-    article: { type: DataTypes.STRING, allowNull: false },
-    description: { type: DataTypes.TEXT, allowNull: true },
+    article: { 
+      type: DataTypes.STRING, 
+      allowNull: false 
+    },
+
+    description: { 
+      type: DataTypes.TEXT, 
+      allowNull: true 
+    },
     
-    propNumber: { type: DataTypes.STRING, allowNull: false },
-    dateAcquired: { type: DataTypes.DATEONLY, allowNull: false },
-
-    unit: { type: DataTypes.STRING, allowNull: true },
-    unitValue: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
-
-    balQty: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
-    balValue: { type: DataTypes.DECIMAL(18, 2), allowNull: true },
-
-    accountableOfficer: 
-    { 
-      type: DataTypes.STRING, allowNull: false 
+    propNumber: { 
+      type: DataTypes.STRING, 
+      allowNull: false,
+      unique: true, // 🔥 important
     },
-    areMeNo: 
-    { 
-      type: DataTypes.STRING, allowNull: true 
+
+    dateAcquired: { 
+      type: DataTypes.DATEONLY, 
+      allowNull: false 
     },
-    office: 
-    { 
-      type: DataTypes.STRING, allowNull: true 
+
+    unit: { 
+      type: DataTypes.STRING, 
+      allowNull: true 
+    },
+
+    unitValue: { 
+      type: DataTypes.DECIMAL(18, 2), 
+      allowNull: false,
+      defaultValue: 0,
+    },
+
+    balQty: { 
+      type: DataTypes.DECIMAL(18, 2), 
+      allowNull: false,
+      defaultValue: 0,
+    },
+
+    balValue: { 
+      type: DataTypes.DECIMAL(18, 2), 
+      allowNull: false,
+      defaultValue: 0,
+    },
+
+    // ✅ NEW RELATIONAL FIELD
+    employee_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+
+    areMeNo: { 
+      type: DataTypes.STRING, 
+      allowNull: true 
+    },
+
+    office: { 
+      type: DataTypes.STRING, 
+      allowNull: true 
     },
   },
   {
