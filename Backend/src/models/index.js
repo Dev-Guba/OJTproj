@@ -28,5 +28,13 @@ Employee.belongsTo(Office, {
   foreignKey: "office_id",
 });
 
+Employee.hasMany(Record, {
+  foreignKey: "employee_id",
+});
+
+Record.belongsTo(Employee, {
+  foreignKey: "employee_id",
+});
+
 // Export all models
 export { User, Role, Record, Status, Employee, Office };

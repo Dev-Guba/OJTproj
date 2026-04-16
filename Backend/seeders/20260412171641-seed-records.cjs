@@ -11,10 +11,25 @@ module.exports = {
       { type: queryInterface.sequelize.QueryTypes.SELECT }
     );
 
+    const employeeNames = await queryInterface.sequelize.query(
+      `SELECT EmployeeId, FirstName, LastName FROM Employees;`,
+      { type: queryInterface.sequelize.QueryTypes.SELECT }
+    );
+
     const getOffices = (id) => {
       const employee = employees.find(emp => emp.EmployeeId === id);
       return employee ? employee.SameDeptCode : null;
-    }
+    };
+
+    const getAccountableOfficer = (id) => {
+      const employee = employeeNames.find(emp => emp.EmployeeId === Number(id));
+      if (!employee) return null;
+
+      const {FirstName, LastName} = employee;
+
+
+      return `${FirstName} ${LastName}`;
+    };
 
     await queryInterface.bulkInsert('ICTORecords', [
       // Employee 1 (SuperAdmin)
@@ -28,6 +43,7 @@ module.exports = {
         unitValue: 55000,
         balQty: 1,
         balValue: 55000,
+        accountableOfficer: getAccountableOfficer(1),
         areMeNo: 'ARE-001',
         office: getOffices(1),
         createdAt: now,
@@ -45,6 +61,7 @@ module.exports = {
         unitValue: 12000,
         balQty: 1,
         balValue: 12000,
+        accountableOfficer: getAccountableOfficer(2),
         areMeNo: 'ARE-002',
         office: getOffices(2),
         createdAt: now,
@@ -62,6 +79,7 @@ module.exports = {
         unitValue: 35000,
         balQty: 1,
         balValue: 35000,
+        accountableOfficer: getAccountableOfficer(3),
         areMeNo: 'ARE-003',
         office: getOffices(3),
         createdAt: now,
@@ -79,6 +97,7 @@ module.exports = {
         unitValue: 18000,
         balQty: 1,
         balValue: 18000,
+        accountableOfficer: getAccountableOfficer(4),
         areMeNo: 'ARE-004',
         office: getOffices(4),
         createdAt: now,
@@ -96,6 +115,7 @@ module.exports = {
         unitValue: 5000,
         balQty: 2,
         balValue: 10000,
+        accountableOfficer: getAccountableOfficer(5),
         areMeNo: null,
         office: getOffices(5),
         createdAt: now,
@@ -113,6 +133,7 @@ module.exports = {
         unitValue: 25000,
         balQty: 1,
         balValue: 25000,
+        accountableOfficer: getAccountableOfficer(6),
         areMeNo: 'ARE-006',
         office: getOffices(6),
         createdAt: now,
@@ -130,6 +151,7 @@ module.exports = {
         unitValue: 30000,
         balQty: 1,
         balValue: 30000,
+        accountableOfficer: getAccountableOfficer(7),
         areMeNo: null,
         office: getOffices(7),
         createdAt: now,

@@ -1,4 +1,4 @@
-import { Record } from "../models/index.js";
+import { Record, Employee } from "../models/index.js";
 import puppeteer from "puppeteer";
 import { Op } from "sequelize";
 import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
@@ -74,10 +74,10 @@ export async function getAllRecords(user, query = {}) {
     "unitValue",
     "balQty",
     "balValue",
-    "accountableOfficer",
     "areMeNo",
     "office",
     "createdAt",
+    "accountableOfficer", // virtual
   ];
 
   const sortKey = allowedSortKeys.includes(query.sortKey)
@@ -89,6 +89,7 @@ export async function getAllRecords(user, query = {}) {
 
   const where = buildRecordScopeWhere(user);
 
+  // 🔍 SEARCH
   if (search) {
     where[Op.and] = [
       ...(where[Op.and] || []),
@@ -97,11 +98,38 @@ export async function getAllRecords(user, query = {}) {
           { article: { [Op.like]: `%${search}%` } },
           { description: { [Op.like]: `%${search}%` } },
           { propNumber: { [Op.like]: `%${search}%` } },
-          { accountableOfficer: { [Op.like]: `%${search}%` } },
           { areMeNo: { [Op.like]: `%${search}%` } },
           { office: { [Op.like]: `%${search}%` } },
+
+          // ✅ FULL NAME SEARCH
+          sequelizeWhere(
+            fn(
+              "concat",
+              col("Employee.FirstName"),
+              " ",
+              col("Employee.LastName")
+            ),
+            {
+              [Op.like]: `%${search}%`,
+            }
+          ),
         ],
       },
+    ];
+  }
+
+  // 🔽 ORDER
+  let order = [["createdAt", "DESC"]];
+
+  if (sortKey === "accountableOfficer") {
+    order = [
+      [col("Employee.FirstName"), sortDir],
+      [col("Employee.LastName"), sortDir],
+    ];
+  } else {
+    order = [
+      [sortKey, sortDir],
+      ["createdAt", "DESC"],
     ];
   }
 
@@ -109,20 +137,47 @@ export async function getAllRecords(user, query = {}) {
     where,
     limit,
     offset,
-    order: [
-      ["office", "ASC"],
-      ["accountableOfficer", "ASC"],
-      ["article", "ASC"],
-      ["createdAt", "DESC"],
+    distinct: true,
+
+    include: [
+      {
+        model: Employee,
+        attributes: ["FirstName", "LastName"],
+      },
     ],
+
+    order,
+  });
+
+  // 🎯 FORMAT OUTPUT
+  const formattedRows = rows.map((record) => {
+    const r = record.toJSON();
+
+    return {
+      ...r,
+      accountableOfficer: `${r.Employee?.FirstName || ""} ${
+        r.Employee?.LastName || ""
+      }`.trim(),
+    };
   });
 
   return {
-    rows,
+    rows: formattedRows,
     total: count,
     page,
     limit,
   };
+}
+
+export async function getRecordByOfficeName(id, user) {
+  if (!user) {
+    throw new Error("Authenticated user not found.");
+  }
+  const where = {
+    id,
+    ...buildRecordScopeWhere(user),
+  };
+
 }
 
 export async function getRecordById(id, user) {

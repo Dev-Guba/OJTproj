@@ -60,6 +60,11 @@ module.exports = {
         allowNull: true,
       },
 
+      accountableOfficer: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+
       areMeNo: {
         type: Sequelize.STRING,
         allowNull: true,

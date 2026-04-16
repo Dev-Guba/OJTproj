@@ -19,23 +19,15 @@ function normalizeAuth(resData, fallbackEmail) {
     resData?.user?.EmployeeNo ??
     null;
 
-  const roleId =
-    resData?.role_id ??
-    resData?.user?.role_id ??
-    null;
+  const roleId = resData?.roleId ?? resData?.user?.roleId ?? resData?.user?.role_id ?? null;
 
   const email =
     resData?.email ??
-    resData?.user?.email ??
     resData?.user?.Email ??
     fallbackEmail ??
     null;
 
-  const sameDeptCode =
-    resData?.sameDeptCode ??
-    resData?.user?.sameDeptCode ??
-    resData?.user?.SameDeptCode ??
-    null;
+  const SameDeptCode = resData?.user?.officeCode ?? resData?.user?.SameDeptCode ?? null;
 
   const firstName =
     resData?.firstName ??
@@ -55,8 +47,7 @@ function normalizeAuth(resData, fallbackEmail) {
     employeeNo,
     role_id: roleId,
     email,
-    sameDeptCode,
-    SameDeptCode: sameDeptCode, // keep both for compatibility
+    SameDeptCode,
     firstName,
     lastName,
     token,
