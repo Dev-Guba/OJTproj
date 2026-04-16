@@ -19,5 +19,14 @@ Employee.hasOne(User, {
   sourceKey: "EmployeeNo",
 });
 
+// Employee ↔ Office
+Office.hasMany(Employee, {
+  foreignKey: "office_id",
+});
+
+Employee.belongsTo(Office, {
+  foreignKey: "office_id",
+});
+
 // Export all models
 export { User, Role, Record, Status, Employee, Office };
