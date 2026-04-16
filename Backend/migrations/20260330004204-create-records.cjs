@@ -17,7 +17,7 @@ module.exports = {
           key: "EmployeeId",
         },
         onUpdate: "CASCADE",
-        onDelete: "RESTRICT",
+        onDelete: "NO ACTION",
       },
 
       article: {

@@ -232,8 +232,15 @@ IsDeleted: { type: Sequelize.INTEGER, defaultValue: 0 },
 lockPDSflag: { type: Sequelize.INTEGER, defaultValue: 0 },
 IsDtrExempted: { type: Sequelize.INTEGER, defaultValue: 0 },
 RcvSMSLogs: { type: Sequelize.INTEGER, defaultValue: 1 },
-modified_by: { type: Sequelize.STRING(50) },
-modified_date: { type: Sequelize.DATE },
+createdAt: {
+        allowNull: true,
+        type: Sequelize.DATE,
+      },
+
+      updatedAt: {
+        allowNull: true,
+        type: Sequelize.DATE,
+      },
 });
 
 // await queryInterface.addColumn('Employees', 'createdAt',{
