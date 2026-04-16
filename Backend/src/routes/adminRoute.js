@@ -2,10 +2,10 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import {
   login,
-  getAdmins,
-  createAdmin,
-  updateAdmin,
-  deleteAdmin,
+  HandlegetAdmins,
+  HandleCreateAdmin,
+  HandleUpdateAdmin,
+  HandleDeleteAdmin,
 } from "../controller/adminController.js";
 import { getEmployees } from "../controller/employeeController.js";
 import { validate } from "../middleware/validate.js";
@@ -27,10 +27,10 @@ const loginLimiter = rateLimit({
 
 router.post("/auth/login", loginLimiter, validate(adminLoginSchema), login);
 
-router.get("/admins", requireAuth, getAdmins);
-router.post("/admins", requireAuth, validate(createAdminSchema), createAdmin);
-router.put("/admins/:id", requireAuth, updateAdmin);
-router.delete("/admins/:id", requireAuth, deleteAdmin);
+router.get("/admins", requireAuth, HandlegetAdmins);
+router.post("/admins", requireAuth, validate(createAdminSchema), HandleCreateAdmin);
+router.put("/admins/:id", requireAuth, HandleUpdateAdmin);
+router.delete("/admins/:id", requireAuth, HandleDeleteAdmin);
 
 router.get("/employees", requireAuth, getEmployees);
 
