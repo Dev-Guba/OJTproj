@@ -11,6 +11,7 @@ import {
 } from "../services/adminServices.js";
 
 import { ROLES } from "../constants/roles.js";
+import { createUserByAdmin } from "../services/adminServices.js";
 
 /**
  * ================================
@@ -115,6 +116,8 @@ export async function HandleCreateAdmin(req, res) {
     if (!isSuperAdmin(req)) {
       return res.status(403).json({ message: "Forbidden" });
     }
+
+    
 
     const { email, password, SameDeptCode } = req.body;
 

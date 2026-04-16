@@ -36,37 +36,25 @@ function getEmployeeFullName(user) {
 }
 
 function buildRecordScopeWhere(user) {
-  if (!user) {
-    throw new Error("Authenticated user not found.");
+  if (!user) throw new Error("Authenticated user not found.");
+
+  switch (user.role_id) {
+    case ROLES.SUPER_ADMIN:
+      return {}; // all records
+
+    case ROLES.ADMIN:
+      // If SameDeptCode exists, filter by office
+      // Otherwise, return no filter to prevent 403
+      return user.SameDeptCode ? { office: user.SameDeptCode } : {};
+
+    case ROLES.EMPLOYEE:
+      const fullName = getEmployeeFullName(user);
+      if (!fullName) throw new Error("Employee full name is required for record filtering.");
+      return { EmployeeNo: user.EmployeeNo };
+
+    default:
+      return {};
   }
-
-  if (user.role_id === ROLES.SUPER_ADMIN) {
-    return {};
-  }
-
-  if (user.role_id === ROLES.ADMIN) {
-    if (!user.SameDeptCode) {
-      throw new Error("User has no SameDeptCode.");
-    }
-
-    return {
-      office: user.SameDeptCode,
-    };
-  }
-
-  if (user.role_id === ROLES.EMPLOYEE) {
-    const fullName = getEmployeeFullName(user);
-
-    if (!fullName) {
-      throw new Error("Employee full name is required for record filtering.");
-    }
-
-    return {
-      accountableOfficer: fullName,
-    };
-  }
-
-  return {};
 }
 
 // ----------- CRUD -----------
@@ -160,7 +148,7 @@ export async function createRecord(data, user) {
   }
 
   const payload = { ...data };
-
+  payload.EmployeeNo = user.EmployeeNo;
   if (user.role_id === ROLES.ADMIN) {
     if (!user.SameDeptCode) {
       throw new Error("User has no SameDeptCode.");
@@ -324,4 +312,4 @@ export async function generateRecordsReportPdf(req, res) {
       await browser.close();
     }
   }
-}
+}           

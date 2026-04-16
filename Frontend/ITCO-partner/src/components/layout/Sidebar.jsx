@@ -155,14 +155,23 @@ export default function Sidebar({ open, onClose }) {
               />
             )}
 
-            {isSuperAdmin && (
-              <NavItem
-                to="/dashboard/offices"
-                label="Office Management"
-                icon="🏢"
-                onClick={closeMobile}
-              />
-            )}
+           {isSuperAdmin && (
+  <NavItem
+    to="/dashboard/offices"
+    label="Office Management"
+    icon="🏢"
+    onClick={closeMobile}
+  />
+)}
+
+{isAdmin && (
+  <NavItem
+  to="/dashboard/offices/me"
+  label="My Office"
+  icon="🏢"
+  onClick={closeMobile}
+/>
+)}
 
 
             <NavItem

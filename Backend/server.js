@@ -15,7 +15,7 @@ import recordRoutes from "./src/routes/recordRoute.js";
 
 import "./src/models/index.js";
 
-dotenv.config();
+dotenv.config();  
 
 const app = express();
 

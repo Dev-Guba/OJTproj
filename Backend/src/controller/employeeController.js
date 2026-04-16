@@ -11,19 +11,10 @@ export async function getEmployees(req, res) {
     const availableOnly = String(req.query.availableOnly).toLowerCase() === "true";
     const search = req.query.search || "";
 
-    let deptCode = null;
-
-    if (req.user.role_id === ROLES.SUPER_ADMIN) {
-      deptCode = req.query.deptCode || null;
-    } else {
-      if (!req.user.SameDeptCode) {
-        return res.status(403).json({
-          message: "User has no department assigned.",
-        });
-      }
-
-      deptCode = req.user.SameDeptCode;
-    }
+    const deptCode =
+  req.user.role_id === ROLES.ADMIN
+    ? req.user.SameDeptCode
+    : null;
 
     const result = await getEmployeesByDept(deptCode, page, limit, {
       availableOnly,
@@ -59,10 +50,12 @@ export async function createEmployeeAccountController(req, res) {
     }
 
     const result = await createEmployeeAccount({
-      EmployeeNo,
-      email,
-      password,
-    });
+  EmployeeNo,
+  email,
+  password,
+  callerRole: req.user.role_id,
+  callerDeptCode: req.user.SameDeptCode,
+});
 
     if (result?.error) {
       const code =

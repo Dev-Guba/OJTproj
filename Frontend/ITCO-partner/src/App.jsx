@@ -39,9 +39,12 @@ export default function App() {
         <Route path="admins" element={<AdminManagement />} />
         <Route path="offices" element={<OfficeManagement />} />
         <Route path="offices/:id" element={<OfficeDetailsPage />} />
+        <Route path="offices/me" element={<OfficeDetailsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+
+      
   );
 }
