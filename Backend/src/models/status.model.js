@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
 const Status = sequelize.define(
-  "CPTStatus",
+  "status",
   {
     statusId: {
       type: DataTypes.INTEGER,
