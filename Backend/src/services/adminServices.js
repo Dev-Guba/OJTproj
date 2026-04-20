@@ -200,3 +200,46 @@ export async function deleteAdminUser(userId) {
   await admin.destroy();
   return true;
 }
+
+export async function createUserByAdmin(currentUser, data) {
+  const { email, password, role_id, EmployeeNo, SameDeptCode } = data;
+
+  // 🔒 1. Validate creator role
+  if (!currentUser || !currentUser.role_id) {
+    throw new Error("Unauthorized");
+  }
+
+  // 🔒 2. Role restriction logic
+  if (currentUser.role_id === ROLES.ADMIN && role_id !== ROLES.EMPLOYEE) {
+    throw new Error("Admin can only create Employee accounts");
+  }
+
+  if (currentUser.role_id === ROLES.EMPLOYEE) {
+    throw new Error("Employees cannot create accounts");
+  }
+
+  // 🔒 3. Prevent invalid roles
+  if (![ROLES.ADMIN, ROLES.EMPLOYEE].includes(role_id)) {
+    throw new Error("Invalid role assignment");
+  }
+
+  // 🔒 4. Check if email already exists
+  const existingUser = await User.findOne({ where: { email } });
+  if (existingUser) {
+    throw new Error("Email already exists");
+  }
+
+  // 🔒 5. Hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // 🔒 6. Create user
+  const newUser = await User.create({
+    email: email.trim(),
+    password: hashedPassword,
+    role_id,
+    EmployeeNo: EmployeeNo || null,
+    SameDeptCode: SameDeptCode || null,
+  });
+
+  return newUser;
+}

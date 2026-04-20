@@ -2,7 +2,7 @@ import { Op } from "sequelize";
 import { Office, User, Employee } from "../models/index.js";
 import { ROLES } from "../constants/roles.js";
 
-export async function getOffices(filters = {}) {
+export async function getOffices(filters = {}, user) {
   const search = String(filters.search ?? "").trim();
   const status = String(filters.status ?? "all").trim().toLowerCase();
 
@@ -17,6 +17,11 @@ export async function getOffices(filters = {}) {
       { code: { [Op.like]: `%${search}%` } },
       { name: { [Op.like]: `%${search}%` } },
     ];
+  }
+
+  // 🔥 ONLY CHANGE (ROLE RESTRICTION)
+  if (user?.role_id === ROLES.ADMIN) {
+    where.code = user.SameDeptCode;
   }
 
   return await Office.findAll({

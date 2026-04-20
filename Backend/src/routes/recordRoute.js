@@ -25,7 +25,6 @@ import {
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole(1)); // ✅ admin-only
 
 router.get("/", handleRecords);
 router.post("/report", generateRecordsReportPdf);

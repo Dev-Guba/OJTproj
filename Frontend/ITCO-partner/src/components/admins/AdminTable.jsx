@@ -20,7 +20,6 @@ export default function AdminTable({
       <table className="min-w-full text-sm border-collapse">
         <thead className="bg-slate-50 text-slate-700">
           <tr>
-            <th className="border border-slate-200 px-4 py-3 text-left">User ID</th>
             <th className="border border-slate-200 px-4 py-3 text-left">Email</th>
             <th className="border border-slate-200 px-4 py-3 text-left">Office</th>
             <th className="border border-slate-200 px-4 py-3 text-left">Linked Employee</th>
@@ -50,8 +49,7 @@ export default function AdminTable({
           ) : (
             admins.map((admin) => (
               <tr key={admin.user_id} className="hover:bg-slate-50">
-                <td className="border border-slate-200 px-4 py-3">{admin.user_id}</td>
-                <td className="border border-slate-200 px-4 py-3">{admin.email}</td>
+                <td className="border border-slate-200 px-4 py-3">{admin.Email}</td>
                 <td className="border border-slate-200 px-4 py-3">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                     {admin.SameDeptCode || admin.Employee?.SameDeptCode || "-"}

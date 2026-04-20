@@ -38,6 +38,8 @@ export default function RecordsTable({
     </td>
   );
 
+  const headerOfficer =
+  rows?.[0]?.accountableOfficer || "No Officer";
   return (
     <div className="overflow-x-auto">
       <table className="min-w-400 w-full text-sm border border-gray-400 border-collapse">
@@ -80,7 +82,7 @@ export default function RecordsTable({
     className="h-10 bg-sky-200 text-red-700 text-2xl font-bold text-center px-4 py-0 leading-none"
     style={{ fontFamily: "'Cinzel', serif", letterSpacing: "2px" }}
   >
-    ARLEE CARLOS (Information Technology Officer I)
+    {headerOfficer}
   </th>
 </tr>
 </thead>
