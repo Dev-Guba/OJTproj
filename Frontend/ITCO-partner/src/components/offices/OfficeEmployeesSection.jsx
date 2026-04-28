@@ -4,10 +4,8 @@ import Button from "../ui/Button";
 function EmployeeAccountBadge({ hasAccount }) {
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-        hasAccount
-          ? "bg-blue-50 text-blue-700"
-          : "bg-amber-50 text-amber-700"
+      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+        hasAccount ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
       }`}
     >
       {hasAccount ? "Has Account" : "No Account"}
@@ -15,139 +13,140 @@ function EmployeeAccountBadge({ hasAccount }) {
   );
 }
 
-function SectionCard({ title, subtitle, children }) {
+function Initials({ name }) {
+  const parts = name?.trim().split(" ") ?? [];
+  const letters = parts.length >= 2
+    ? `${parts[0][0]}${parts[parts.length - 1][0]}`
+    : (parts[0]?.[0] ?? "?");
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-4 py-4">
-        <div className="text-sm font-semibold text-slate-900">{title}</div>
-        {subtitle ? (
-          <div className="mt-1 text-xs text-slate-500">{subtitle}</div>
-        ) : null}
-      </div>
-      <div className="px-4 py-4">{children}</div>
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 uppercase">
+      {letters}
     </div>
   );
 }
 
 const PAGE_SIZE = 5;
 
-export default function OfficeEmployeesSection({
-  employees = [],
-  onCreateAccount,
-}) {
+export default function OfficeEmployeesSection({ employees = [], onCreateAccount }) {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
 
-  const totalPages = Math.max(1, Math.ceil(employees.length / PAGE_SIZE));
+  const filtered = useMemo(() => {
+    if (!search.trim()) return employees;
+    const q = search.toLowerCase();
+    return employees.filter(
+      (emp) =>
+        [emp.FirstName, emp.LastName].join(" ").toLowerCase().includes(q) ||
+        emp.EmployeeNo?.toLowerCase().includes(q) ||
+        emp.Email?.toLowerCase().includes(q)
+    );
+  }, [employees, search]);
 
-  const paginatedEmployees = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    return employees.slice(start, end);
-  }, [employees, page]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
 
-  const goToPage = (nextPage) => {
-    setPage(Math.min(Math.max(1, nextPage), totalPages));
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safePage]);
+
+  const goTo = (n) => setPage(Math.min(Math.max(1, n), totalPages));
+
+  // Reset to page 1 when search changes
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
   };
 
   return (
-    <SectionCard
-      title="Employees Under This Office"
-      subtitle="Active employees currently assigned to this office"
-    >
-      {employees.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-          No active employees found for this office.
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-slate-900">
+            Employees Under This Office
+          </div>
+          <div className="mt-0.5 text-xs text-slate-400">
+            {employees.length} employee(s) assigned
+          </div>
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="space-y-3">
-            {paginatedEmployees.map((emp) => (
-              <div
-                key={emp.EmployeeNo}
-                className="rounded-xl border border-slate-200 px-4 py-3"
-              >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-slate-900">
-                      {[emp.FirstName, emp.LastName].filter(Boolean).join(" ") || "-"}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      Employee No: {emp.EmployeeNo}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      Email: {emp.Email || "-"}
-                    </div>
-                  </div>
+        <input
+          type="text"
+          placeholder="Search employees..."
+          value={search}
+          onChange={handleSearch}
+          className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 sm:w-52"
+        />
+      </div>
 
-                  <div className="flex flex-col items-start gap-2 lg:items-end">
-                    <EmployeeAccountBadge hasAccount={emp.hasAccount} />
-
-                    {emp.account?.email ? (
-                      <div className="text-xs text-slate-500">
-                        Account: {emp.account.email}
+      <div className="px-4 py-4">
+        {filtered.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+            {search ? "No employees match your search." : "No active employees found."}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {paginated.map((emp) => {
+              const fullName = [emp.FirstName, emp.LastName].filter(Boolean).join(" ");
+              return (
+                <div
+                  key={emp.EmployeeNo}
+                  className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <Initials name={fullName} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-slate-900">
+                      {fullName || "-"}
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-400">
+                      {emp.EmployeeNo}
+                      {emp.Email ? ` · ${emp.Email}` : ""}
+                    </div>
+                    {emp.account?.email && (
+                      <div className="mt-0.5 text-xs text-blue-500">
+                        {emp.account.email}
                       </div>
-                    ) : null}
-
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <EmployeeAccountBadge hasAccount={emp.hasAccount} />
                     {!emp.hasAccount && (
-                      <Button
-                        size="sm"
-                        type="button"
-                        onClick={() => onCreateAccount?.(emp)}
-                      >
+                      <Button size="sm" type="button" onClick={() => onCreateAccount?.(emp)}>
                         Create Account
                       </Button>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        )}
 
-          <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-slate-500">
-              Page {page} of {totalPages} • {employees.length} employee(s)
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => goToPage(1)}
-              >
-                First
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => goToPage(page - 1)}
-              >
-                Prev
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page === totalPages}
-                onClick={() => goToPage(page + 1)}
-              >
-                Next
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={page === totalPages}
-                onClick={() => goToPage(totalPages)}
-              >
-                Last
-              </Button>
+        {filtered.length > PAGE_SIZE && (
+          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+            <span className="text-xs text-slate-400">
+              Page {safePage} of {totalPages}
+            </span>
+            <div className="flex gap-1">
+              {[["First", 1], ["Prev", safePage - 1], ["Next", safePage + 1], ["Last", totalPages]].map(
+                ([label, target]) => (
+                  <Button
+                    key={label}
+                    variant="ghost"
+                    size="sm"
+                    disabled={
+                      (label === "First" || label === "Prev") && safePage === 1 ||
+                      (label === "Last" || label === "Next") && safePage === totalPages
+                    }
+                    onClick={() => goTo(target)}
+                  >
+                    {label}
+                  </Button>
+                )
+              )}
             </div>
           </div>
-        </div>
-      )}
-    </SectionCard>
+        )}
+      </div>
+    </div>
   );
 }

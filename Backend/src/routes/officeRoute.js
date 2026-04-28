@@ -1,6 +1,5 @@
 import express from "express";
 import verifyToken from "../middleware/verifyToken.js";
-import { getOfficeDetailsController as getMyOfficeController } from "../controller/officeController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -9,6 +8,7 @@ import {
   updateOfficeController,
   deleteOfficeController,
   getOfficeDetailsController,
+  getMyOfficeController,
 } from "../controller/officeController.js";
 import {
   createOfficeSchema,

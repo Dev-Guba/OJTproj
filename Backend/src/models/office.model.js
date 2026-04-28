@@ -16,6 +16,11 @@ const Office = sequelize.define(
       unique: true,
     },
 
+    description: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,

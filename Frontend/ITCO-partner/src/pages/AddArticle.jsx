@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ROLES } from "../utils/roles";
 import RecordForm from "../components/records/RecordForm";
+import EmployeeCombobox from "../components/records/EmployeeCombobox.jsx";
 
 const empty = {
   article: "",
@@ -184,8 +185,11 @@ export default function AddArticle() {
       accountableOfficer: (form.accountableOfficer || "").trim(),
       areMeNo: (form.areMeNo || "").trim(),
       office: (form.office || "").trim(),
+      employee_id: selectedEmployeeId ? Number(selectedEmployeeId) : null,
     };
 
+    console.log("payload being sent:", payload);
+    
     try {
       if (editId) {
         await recordsApi.update(editId, payload);

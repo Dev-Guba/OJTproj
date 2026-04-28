@@ -1,7 +1,7 @@
 import Input from "../ui/Input";
 import Textarea from "../ui/TextArea";
 import Button from "../ui/Button";
-import EmployeeSelectField from "./EmployeeSelectField";
+import EmployeeCombobox from "./EmployeeCombobox";  // removed unused EmployeeSelectField
 
 export default function RecordForm({
   form,
@@ -40,14 +40,21 @@ export default function RecordForm({
           onChange={onFieldChange("dateAcquired")}
         />
 
-        <EmployeeSelectField
-          value={selectedEmployeeId}
-          options={employeeOptions}
-          loading={loadingEmployees}
-          disabled={editMode}
-          onChange={onEmployeeChange}
-          editMode={editMode}
-        />
+        {/* Wrapped to match the label pattern of other fields */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">Employee</label>
+          <EmployeeCombobox
+            options={employeeOptions}
+            value={selectedEmployeeId}
+            onChange={onEmployeeChange}
+            disabled={loadingEmployees}
+            placeholder={
+              loadingEmployees
+                ? "Loading employees..."
+                : "Search by name, employee no, or dept..."
+            }
+          />
+        </div>
 
         <Input
           label="Accountable Officer"
@@ -106,7 +113,13 @@ export default function RecordForm({
 
       <div className="mt-5 flex gap-2">
         <Button type="submit" disabled={loading}>
-          {loading ? (editMode ? "Updating..." : "Submitting...") : editMode ? "Update" : "Submit"}
+          {loading
+            ? editMode
+              ? "Updating..."
+              : "Submitting..."
+            : editMode
+            ? "Update"
+            : "Submit"}
         </Button>
 
         <Button type="button" variant="ghost" onClick={onCancel}>

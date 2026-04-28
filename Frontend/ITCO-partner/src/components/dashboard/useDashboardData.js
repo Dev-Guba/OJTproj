@@ -4,6 +4,7 @@ import Api from "../../api/auth.api";
 import Http from "../../api/Http";
 import { ROLES } from "../../utils/roles";
 
+// keep this (since your backend might still vary)
 function extractRecordRows(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.rows)) return payload.rows;
@@ -55,38 +56,46 @@ export default function useDashboardData(user) {
       try {
         setLoading(true);
 
-        const requests = [
+        // ✅ FIXED: consistent Promise.all order
+        const [recordsRes, employeesRes, adminsRes] = await Promise.all([
           recordsApi.getAll({
             page: 1,
-            limit: 500,
-            sortKey: "createdAt",
+            limit: 50,
+            sortKey: "created_at",
             sortDir: "desc",
           }),
-        ];
+          Http.get("/employees"),
+          isSuperAdmin ? Api.getAdmins() : Promise.resolve(null),
+        ]);
 
-        if (isSuperAdmin) {
-          requests.push(Api.getAdmins());
-          requests.push(Http.get("/employees"));
-        } else {
-          requests.push(Promise.resolve(null));
-          requests.push(Http.get("/employees"));
-        }
+        // ✅ IMPORTANT FIX: recordsRes is already data
+        setRecords(
+          normalizeRecords(
+            extractRecordRows(recordsRes)
+          )
+        );
 
-        const [recordsRes, adminsRes, employeesRes] = await Promise.all(requests);
-
-        setRecords(normalizeRecords(extractRecordRows(recordsRes)));
-
-        if (isSuperAdmin && adminsRes) {
+        // ✅ safe admin handling
+        if (isSuperAdmin && adminsRes?.data) {
           setAdmins(extractAdmins(adminsRes.data));
         } else {
           setAdmins([]);
         }
 
-        if (employeesRes) {
+        // ✅ safe employee handling
+        if (employeesRes?.data) {
           setEmployees(extractEmployees(employeesRes.data));
         } else {
           setEmployees([]);
         }
+
+      } catch (err) {
+        console.error("Dashboard error:", err);
+
+        // fallback so UI doesn't crash
+        setRecords([]);
+        setAdmins([]);
+        setEmployees([]);
       } finally {
         setLoading(false);
       }
@@ -97,10 +106,16 @@ export default function useDashboardData(user) {
 
   const stats = useMemo(() => {
     const totalRecords = records.length;
-    const totalQty = records.reduce((sum, r) => sum + Number(r.balQty || 0), 0);
+
+    const totalQty = records.reduce(
+      (sum, r) => sum + Number(r.balQty || 0),
+      0
+    );
 
     const totalValue = records.reduce((sum, r) => {
-      if (r.balValue !== "" && r.balValue != null) return sum + Number(r.balValue);
+      if (r.balValue !== "" && r.balValue != null) {
+        return sum + Number(r.balValue);
+      }
       return sum + Number(r.unitValue || 0) * Number(r.balQty || 0);
     }, 0);
 
@@ -110,14 +125,22 @@ export default function useDashboardData(user) {
       return acc;
     }, {});
 
-    const officeEntries = Object.entries(byOffice).sort((a, b) => b[1] - a[1]);
+    const officeEntries = Object.entries(byOffice).sort(
+      (a, b) => b[1] - a[1]
+    );
+
     const topOffice = officeEntries[0]?.[0] ?? "—";
     const totalOffices = officeEntries.length;
-    const missingAre = records.filter((r) => !String(r.areMeNo || "").trim()).length;
+
+    const missingAre = records.filter(
+      (r) => !String(r.areMeNo || "").trim()
+    ).length;
 
     const recent = records
       .slice()
-      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+      .sort((a, b) =>
+        String(b.createdAt || "").localeCompare(String(a.createdAt || ""))
+      )
       .slice(0, 5);
 
     return {
