@@ -78,21 +78,21 @@ export default function AdminManagement() {
     });
   };
 
-  const officeOptions = useMemo(() => {
-    const fromApi = offices
-      .map((office) => String(office.code ?? "").trim())
-      .filter(Boolean);
+  const officeList = useMemo(() => {
+  const fromApi = offices
+    .map((office) => String(office.code ?? "").trim())
+    .filter(Boolean);
 
-    const fromAdmins = admins
-      .map((admin) => String(admin.SameDeptCode ?? "").trim())
-      .filter(Boolean);
+  const fromAdmins = admins
+    .map((admin) => String(admin.SameDeptCode ?? "").trim())
+    .filter(Boolean);
 
-    const merged = Array.from(new Set([...fromApi, ...fromAdmins])).sort((a, b) =>
-      a.localeCompare(b)
-    );
+  return Array.from(new Set([...fromApi, ...fromAdmins])).sort((a, b) =>
+    a.localeCompare(b)
+  );
+}, [offices, admins]);
 
-    return ["All", ...merged];
-  }, [offices, admins]);
+const officeOptions = useMemo(() => ["All", ...officeList], [officeList]);
 
   const handleCreateAdmin = async () => {
     try {
@@ -131,32 +131,38 @@ export default function AdminManagement() {
   };
 
   const handleUpdateAdmin = async () => {
-    try {
-      if (!selectedAdmin) return;
+  try {
+    if (!selectedAdmin) return;
 
-      if (!form.email || !form.SameDeptCode) {
-        toast.error("Please fill in email and office.");
-        return;
-      }
-
-      setUpdating(true);
-
-      await Api.updateAdmin(selectedAdmin.user_id, {
-        email: form.email.trim(),
-        SameDeptCode: form.SameDeptCode.trim(),
-      });
-
-      toast.success("Admin updated successfully.");
-      setOpenEdit(false);
-      setSelectedAdmin(null);
-      resetForm();
-      await loadAdmins();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update admin.");
-    } finally {
-      setUpdating(false);
+    if (!form.email || !form.SameDeptCode) {
+      toast.error("Please fill in email and office.");
+      return;
     }
-  };
+
+    setUpdating(true);
+
+    const payload = {
+      email: form.email.trim(),
+      SameDeptCode: form.SameDeptCode.trim(),
+    };
+
+    if (form.password?.trim()) {
+      payload.password = form.password.trim();
+    }
+
+    await Api.updateAdmin(selectedAdmin.user_id, payload);
+
+    toast.success("Admin updated successfully.");
+    setOpenEdit(false);
+    setSelectedAdmin(null);
+    resetForm();
+    await loadAdmins();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to update admin.");
+  } finally {
+    setUpdating(false);
+  }
+};
 
   const handleDeleteAdmin = async (admin) => {
     const ok = window.confirm(`Delete admin "${admin.email}"?`);
@@ -236,7 +242,7 @@ export default function AdminManagement() {
         open={openCreate}
         mode="create"
         form={form}
-        officeOptions={officeOptions}
+        officeOptions={officeList}
         loadingOffices={loadingOffices}
         creating={creating}
         onClose={() => {
@@ -251,7 +257,7 @@ export default function AdminManagement() {
         open={openEdit}
         mode="edit"
         form={form}
-        officeOptions={officeOptions}
+        officeOptions={officeList}
         loadingOffices={loadingOffices}
         updating={updating}
         onClose={() => {

@@ -159,8 +159,8 @@ export default function OfficeManagement() {
     }
   };
 
-  const handleViewDetails = (office) => {
-    navigate(`/dashboard/offices/${office.office_id}`);
+  const handleViewDetails = (id) => {
+    navigate(`/dashboard/offices/${id}/details`);
   };
 
   if (!isSuperAdmin) {

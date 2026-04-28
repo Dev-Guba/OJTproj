@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import officeApi from "../../api/office.api";
 import employeeApi from "../../api/employee.api";
@@ -8,10 +8,31 @@ import OfficeSummary from "../../components/offices/OfficeSummary";
 import OfficeAdminsSection from "../../components/offices/OfficeAdminsSection";
 import OfficeEmployeesSection from "../../components/offices/OfficeEmployeesSection";
 import CreateEmployeeAccountModal from "../../components/offices/CreateEmployeeAccountModal";
+import { adminApi } from "../../api/admin.api";
+import { ROLES } from "../../utils/roles";
+
 
 export default function OfficeDetailsPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+const params = useParams();
+const location = useLocation();
+const navigate = useNavigate();
+
+const id = params?.id;
+const isMe = location.pathname.endsWith("/me");
+
+if (!id && !isMe) {
+  return (
+    <div className="text-red-600">
+      Invalid office ID
+    </div>
+  );
+}
+
+console.log("PARAMS:", params);
+console.log("LOCATION:", location.pathname);
+
+console.log("ROUTE ID:", id);
+
 
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,8 +49,12 @@ export default function OfficeDetailsPage() {
   const loadDetails = async () => {
     try {
       setLoading(true);
-      const res = await officeApi.getDetails(id);
-      setDetails(res.data?.data || null);
+      const res = isMe ? await officeApi.getMyDetails() : await officeApi.getDetails(id);
+      setDetails({
+  office: res.data?.data?.office,
+  admins: res.data?.data?.admins || [],
+  employees: res.data?.data?.employees || [],
+});
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to load office details.");
     } finally {
@@ -39,7 +64,7 @@ export default function OfficeDetailsPage() {
 
   useEffect(() => {
     loadDetails();
-  }, [id]);
+  }, [id, isMe]);
 
   const setField = (key) => (e) => {
     setForm((prev) => ({
@@ -66,11 +91,13 @@ export default function OfficeDetailsPage() {
 
       setCreating(true);
 
-      await employeeApi.createAccount({
-        EmployeeNo: selectedEmployee.EmployeeNo,
-        email: form.email,
-        password: form.password,
-      });
+      await adminApi.createUser({
+  email: form.email,
+  password: form.password,
+  role_id: ROLES.EMPLOYEE, // 🔥 ALWAYS employee
+  EmployeeNo: selectedEmployee.EmployeeNo,
+  SameDeptCode: selectedEmployee.SameDeptCode,
+});
 
       toast.success("Employee account created.");
       setOpenCreate(false);
@@ -87,6 +114,7 @@ export default function OfficeDetailsPage() {
   const office = details?.office;
   const admins = details?.admins || [];
   const employees = details?.employees || [];
+  console.log("EMPLOYEES:", employees);
 
   return (
     <div className="space-y-6">

@@ -1,77 +1,99 @@
 import { Op } from "sequelize";
-import { User, Employee } from "../models/index.js";
-import { ROLES } from "../constants/roles.js";
+import Employee from "../models/employee.model.js";
+import Office from "../models/office.model.js";
+import bcrypt from "bcrypt";
 
+/**
+ * =====================================
+ * FIND EMPLOYEE BY EMAIL
+ * =====================================
+ */
+export async function findEmployeeByEmail(email, { includeOffice = true } = {}) {
+  return await Employee.findOne({
+    where: { Email: email },
+    attributes: [
+      "EmployeeId",
+      "EmployeeNo",
+      "Email",
+      "Password",
+      "role_id",
+      "SameDeptCode",
+      "FirstName",
+      "LastName",
+    ],
+    include: includeOffice
+      ? [
+          {
+            model: Office,
+            attributes: ["office_id", "code", "name"],
+          },
+        ]
+      : [],
+  });
+}
+
+/**
+ * =====================================
+ * VERIFY LOGIN
+ * =====================================
+ */
+export async function verifyLogin(email, password) {
+  const employee = await findEmployeeByEmail(email);
+
+  if (!employee) return null;
+
+  const isValid = await bcrypt.compare(password, employee.Password);
+
+  if (!isValid) return null;
+
+  return {
+    EmployeeId: employee.EmployeeId,
+    EmployeeNo: employee.EmployeeNo,
+    Email: employee.Email,
+    role_id: employee.role_id,
+    SameDeptCode: employee.SameDeptCode,
+    FirstName: employee.FirstName,
+    LastName: employee.LastName,
+  };
+}
+
+/**
+ * =====================================
+ * FIND ADMIN BY ID
+ * =====================================
+ */
 export async function findAdminById(id) {
-  return await User.findOne({
+  return await Employee.findOne({
     where: {
-      user_id: id,
+      EmployeeId: id,
       role_id: {
-        [Op.in]: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+        [Op.in]: [1, 2], // SUPER_ADMIN, ADMIN
       },
     },
     attributes: [
-      "user_id",
-      "email",
-      "password",
-      "EmployeeNo",
-      "SameDeptCode",
+      "EmployeeId",
+      "Email",
+      "Password",
       "role_id",
-    ],
-    include: {
-      model: Employee,
-      attributes: ["EmployeeNo", "SameDeptCode", "FirstName", "LastName"],
-      required: false,
-    },
-  });
-}
-
-export async function findAdminByEmployeeNo(employeeNo) {
-  return await User.findOne({
-    where: { 
-      EmployeeNo: employeeNo,
-    }
-  });
-}
-
-export async function checkEmployeeNoIsActive(employeeNo) {
-  const employee = await findAdminByEmployeeNo(employeeNo);
-  if (!employee) return false;
-
-  const statusId = employee.Employee.statusId;
-  return statusId === 1; // Assuming 1 is the active status ID
-}
-
-export async function findAdminByEmail(email) {
-  return await User.findOne({
-    where: {
-      email,
-      role_id: {
-        [Op.in]: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
-    },
-    attributes: [
-      "user_id",
-      "email",
-      "password",
-      "EmployeeNo",
       "SameDeptCode",
-      "role_id",
+      "FirstName",
+      "LastName",
     ],
-    include: {
-      model: Employee,
-      attributes: ["EmployeeNo", "SameDeptCode", "FirstName", "LastName"],
-      required: false,
-    },
+    raw: true,
   });
 }
 
-export async function getAdminUsers(filters = {}) {
+/**
+ * =====================================
+ * GET ADMINS LIST
+ * =====================================
+ */
+export async function getAdmins(filters = {}) {
   const search = String(filters.search ?? "").trim();
 
   const where = {
     role_id: {
-      [Op.in]: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+      [Op.in]: [1, 2],
     },
   };
 
@@ -81,35 +103,61 @@ export async function getAdminUsers(filters = {}) {
 
   if (search) {
     where[Op.or] = [
-      { email: { [Op.like]: `%${search}%` } },
+      { Email: { [Op.like]: `%${search}%` } },
       { EmployeeNo: { [Op.like]: `%${search}%` } },
       { SameDeptCode: { [Op.like]: `%${search}%` } },
     ];
   }
 
-  return await User.findAll({
+  return await Employee.findAll({
     where,
     attributes: [
-      "user_id",
-      "email",
+      "EmployeeId",
       "EmployeeNo",
+      "Email",
+      "Password",
       "SameDeptCode",
       "role_id",
+      "FirstName",
+      "LastName",
     ],
-    include: {
-      model: Employee,
-      attributes: ["EmployeeNo", "SameDeptCode", "FirstName", "LastName"],
-      required: false,
-    },
-    order: [["user_id", "ASC"]],
+    order: [["EmployeeId", "ASC"]],
+    raw: true,
   });
 }
 
+/**
+ * =====================================
+ * CREATE ADMIN
+ * =====================================
+ */
+export async function createAdminUser({ email, password, SameDeptCode }) {
+  const existing = await Employee.findOne({
+    where: { Email: email },
+  });
+
+  if (existing) return null;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  return await Employee.create({
+    Email: email,
+    Password: hashedPassword,
+    SameDeptCode,
+    role_id: 2,
+  });
+}
+
+/**
+ * =====================================
+ * UPDATE ADMIN
+ * =====================================
+ */
 export async function updateAdminUser(userId, data) {
-  const admin = await User.findOne({
+  const admin = await Employee.findOne({
     where: {
-      user_id: userId,
-      role_id: ROLES.ADMIN,
+      EmployeeId: userId,
+      role_id: 2,
     },
   });
 
@@ -117,23 +165,33 @@ export async function updateAdminUser(userId, data) {
 
   const payload = {};
 
-  if (data.email != null) {
-    payload.email = String(data.email).trim();
+  if (data.email) {
+    payload.Email = data.email.trim();
   }
 
-  if (data.SameDeptCode != null) {
-    payload.SameDeptCode = String(data.SameDeptCode).trim().toUpperCase();
+  if (data.SameDeptCode) {
+    payload.SameDeptCode = data.SameDeptCode.trim().toUpperCase();
+  }
+
+  if (data.password) {
+    payload.Password = await bcrypt.hash(data.password, 10);
   }
 
   await admin.update(payload);
+
   return admin;
 }
 
-export async function deleteAdminUser(userId) {
-  const admin = await User.findOne({
+/**
+ * =====================================
+ * DELETE ADMIN
+ * =====================================
+ */
+export async function deleteAdminUser(userId) { 
+  const admin = await Employee.findOne({
     where: {
-      user_id: userId,
-      role_id: ROLES.ADMIN,
+      EmployeeId: userId,
+      role_id: 2,
     },
   });
 
@@ -141,4 +199,47 @@ export async function deleteAdminUser(userId) {
 
   await admin.destroy();
   return true;
+}
+
+export async function createUserByAdmin(currentUser, data) {
+  const { email, password, role_id, EmployeeNo, SameDeptCode } = data;
+
+  // 🔒 1. Validate creator role
+  if (!currentUser || !currentUser.role_id) {
+    throw new Error("Unauthorized");
+  }
+
+  // 🔒 2. Role restriction logic
+  if (currentUser.role_id === ROLES.ADMIN && role_id !== ROLES.EMPLOYEE) {
+    throw new Error("Admin can only create Employee accounts");
+  }
+
+  if (currentUser.role_id === ROLES.EMPLOYEE) {
+    throw new Error("Employees cannot create accounts");
+  }
+
+  // 🔒 3. Prevent invalid roles
+  if (![ROLES.ADMIN, ROLES.EMPLOYEE].includes(role_id)) {
+    throw new Error("Invalid role assignment");
+  }
+
+  // 🔒 4. Check if email already exists
+  const existingUser = await User.findOne({ where: { email } });
+  if (existingUser) {
+    throw new Error("Email already exists");
+  }
+
+  // 🔒 5. Hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // 🔒 6. Create user
+  const newUser = await User.create({
+    email: email.trim(),
+    password: hashedPassword,
+    role_id,
+    EmployeeNo: EmployeeNo || null,
+    SameDeptCode: SameDeptCode || null,
+  });
+
+  return newUser;
 }

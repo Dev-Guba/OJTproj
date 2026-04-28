@@ -1,75 +1,100 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
 import {
-  findAdminByEmail,
-  getAdminUsers,
+  findEmployeeByEmail,
+  getAdmins,
   updateAdminUser,
   deleteAdminUser,
   findAdminById,
+  createAdminUser,
 } from "../services/adminServices.js";
-import { User } from "../models/index.js";
-import { ROLES } from "../constants/roles.js";
 
+import { ROLES } from "../constants/roles.js";
+import { createUserByAdmin } from "../services/adminServices.js";
+
+/**
+ * ================================
+ * LOGIN
+ * ================================
+ */
 export async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-    const admin = await findAdminByEmail(email);
+    const admin = await findEmployeeByEmail(email);
 
     if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
+      return res.status(404).json({ message: "Account not found" });
     }
 
-    const isMatch = await bcrypt.compare(password, admin.password);
+    const isMatch = await bcrypt.compare(password, admin.Password);
+
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const sameDeptCode =
-      admin.SameDeptCode ?? admin.Employee?.SameDeptCode ?? null;
+    const payload = {
+      userId: admin.EmployeeId,
+      roleId: admin.role_id,
+      employeeNo: admin.EmployeeNo,
+      firstName: admin.FirstName,
+      lastName: admin.LastName,
+      officeCode: admin.Office?.code || null,
+    };
 
     const token = jwt.sign(
-      {
-        id: admin.user_id,
-        role_id: admin.role_id,
-        SameDeptCode: sameDeptCode,
-      },
+      payload,
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "6h" }
     );
 
+    const roleLabel =
+      admin.role_id === ROLES.SUPER_ADMIN ? "Super Admin" : "Admin";
+
     return res.status(200).json({
-      message: "Admin login successful",
+      success: true,
+      message: `Login successful - Welcome ${roleLabel}`,
       token,
-      user: {
-        user_id: admin.user_id,
-        email: admin.email,
-        role_id: admin.role_id,
-        SameDeptCode: sameDeptCode,
-      },
+      user: payload,
     });
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({
+      success: false,
       message: "Server Error",
-      error: err.message,
     });
   }
 }
 
-export async function getAdmins(req, res) {
+/**
+ * ================================
+ * ROLE GUARD (helper inside file)
+ * ================================
+ */
+function isSuperAdmin(req) {
+  return req.user?.role_id === 1; // Assuming 1 is SUPER_ADMIN
+}
+
+/**
+ * ================================
+ * GET ADMINS
+ * ================================
+ */
+export async function HandlegetAdmins(req, res) {
   try {
-    if (req.user.role_id !== ROLES.SUPER_ADMIN) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    // if (!isSuperAdmin(req)) {
+    //   return res.status(403).json({ message: "Forbidden" });
+    // }
 
-    const search = req.query.search || "";
-    const office = req.query.office || "All";
-
-    const admins = await getAdminUsers({ search, office });
+    const admins = await getAdmins({
+      search: req.query.search || "",
+      office: req.query.office || "All",
+    });
 
     return res.status(200).json({
       success: true,
+      message: "Admins retrieved successfully",
       data: admins,
     });
   } catch (err) {
@@ -81,11 +106,18 @@ export async function getAdmins(req, res) {
   }
 }
 
-export async function createAdmin(req, res) {
+/**
+ * ================================
+ * CREATE ADMIN
+ * ================================
+ */
+export async function HandleCreateAdmin(req, res) {
   try {
-    if (req.user.role_id !== ROLES.SUPER_ADMIN) {
+    if (!isSuperAdmin(req)) {
       return res.status(403).json({ message: "Forbidden" });
     }
+
+    
 
     const { email, password, SameDeptCode } = req.body;
 
@@ -96,35 +128,23 @@ export async function createAdmin(req, res) {
       });
     }
 
-    const existingUser = await User.findOne({
-      where: { email },
+    const newAdmin = await createAdminUser({
+      email,
+      password,
+      SameDeptCode,
     });
 
-    if (existingUser) {
+    if (!newAdmin) {
       return res.status(409).json({
         success: false,
         message: "Email is already in use",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newAdmin = await User.create({
-      email,
-      password: hashedPassword,
-      SameDeptCode,
-      role_id: ROLES.ADMIN,
-    });
-
     return res.status(201).json({
       success: true,
       message: "Admin created successfully",
-      data: {
-        user_id: newAdmin.user_id,
-        email: newAdmin.email,
-        SameDeptCode: newAdmin.SameDeptCode,
-        role_id: newAdmin.role_id,
-      },
+      data: newAdmin,
     });
   } catch (err) {
     console.error("Create admin error:", err);
@@ -135,13 +155,19 @@ export async function createAdmin(req, res) {
   }
 }
 
-export async function updateAdmin(req, res) {
+/**
+ * ================================
+ * UPDATE ADMIN
+ * ================================
+ */
+export async function HandleUpdateAdmin(req, res) {
   try {
-    if (req.user.role_id !== ROLES.SUPER_ADMIN) {
+    if (!isSuperAdmin(req)) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
     const userId = Number(req.params.id);
+
     const existing = await findAdminById(userId);
 
     if (!existing || existing.role_id !== ROLES.ADMIN) {
@@ -167,13 +193,19 @@ export async function updateAdmin(req, res) {
   }
 }
 
-export async function deleteAdmin(req, res) {
+/**
+ * ================================
+ * DELETE ADMIN
+ * ================================
+ */
+export async function HandleDeleteAdmin(req, res) {
   try {
-    if (req.user.role_id !== ROLES.SUPER_ADMIN) {
+    if (!isSuperAdmin(req)) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
     const userId = Number(req.params.id);
+
     const existing = await findAdminById(userId);
 
     if (!existing || existing.role_id !== ROLES.ADMIN) {

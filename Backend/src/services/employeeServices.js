@@ -70,7 +70,7 @@ export async function getEmployeesByDept(
 }
 
 export async function createEmployeeAccount(data) {
-  const { EmployeeNo, email, password } = data;
+  const { EmployeeNo, email, password, callerRole, callerDeptCode} = data;
 
   const employee = await Employees.findOne({
     where: {
@@ -84,6 +84,14 @@ export async function createEmployeeAccount(data) {
     return { error: "Employee not found" };
   }
 
+  if (
+  callerRole === ROLES.ADMIN &&
+  employee.SameDeptCode !== callerDeptCode
+) {
+  return {
+    error: "You can only create accounts for employees in your office",
+  };
+}
   const existingByEmployee = await User.findOne({
     where: { EmployeeNo },
   });

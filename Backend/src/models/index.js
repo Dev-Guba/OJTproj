@@ -10,8 +10,31 @@ Role.hasMany(User, { foreignKey: "role_id" });
 User.belongsTo(Role, { foreignKey: "role_id" });
 
 // User ↔ Employee
-User.belongsTo(Employee, { foreignKey: "EmployeeNo" });
-Employee.hasOne(User, { foreignKey: "EmployeeNo" });
+User.belongsTo(Employee, {
+  foreignKey: "EmployeeNo",
+  targetKey: "EmployeeNo",
+});
+Employee.hasOne(User, {
+  foreignKey: "EmployeeNo",
+  sourceKey: "EmployeeNo",
+});
+
+// Employee ↔ Office
+Office.hasMany(Employee, {
+  foreignKey: "office_id",
+});
+
+Employee.belongsTo(Office, {
+  foreignKey: "office_id",
+});
+
+Employee.hasMany(Record, {
+  foreignKey: "employee_id",
+});
+
+Record.belongsTo(Employee, {
+  foreignKey: "employee_id",
+});
 
 // Export all models
 export { User, Role, Record, Status, Employee, Office };

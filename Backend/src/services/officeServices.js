@@ -2,7 +2,7 @@ import { Op } from "sequelize";
 import { Office, User, Employee } from "../models/index.js";
 import { ROLES } from "../constants/roles.js";
 
-export async function getOffices(filters = {}) {
+export async function getOffices(filters = {}, user) {
   const search = String(filters.search ?? "").trim();
   const status = String(filters.status ?? "all").trim().toLowerCase();
 
@@ -13,10 +13,16 @@ export async function getOffices(filters = {}) {
   }
 
   if (search) {
-    where[Op.or] = [
-      { code: { [Op.like]: `%${search}%` } },
-      { name: { [Op.like]: `%${search}%` } },
-    ];
+  where[Op.or] = [
+    { code: { [Op.like]: `%${search}%` } },
+    { name: { [Op.like]: `%${search}%` } },
+    { description: { [Op.like]: `%${search}%` } }, // 👈 add this
+  ];
+}
+
+  // 🔥 ONLY CHANGE (ROLE RESTRICTION)
+  if (user?.role_id === ROLES.ADMIN) {
+    where.code = user.SameDeptCode;
   }
 
   return await Office.findAll({
@@ -29,6 +35,7 @@ export async function createOffice(data) {
   return await Office.create({
     code: String(data.code ?? "").trim().toUpperCase(),
     name: String(data.name ?? "").trim(),
+    description: data.description ? String(data.description).trim() : null,
     status: String(data.status ?? "active").trim().toLowerCase(),
   });
 }
@@ -44,10 +51,8 @@ export async function updateOffice(officeId, data) {
   return await office.update({
     code: data.code != null ? String(data.code).trim().toUpperCase() : office.code,
     name: data.name != null ? String(data.name).trim() : office.name,
-    status:
-      data.status != null
-        ? String(data.status).trim().toLowerCase()
-        : office.status,
+    description: data.description != null ? String(data.description).trim() : office.description,
+    status: data.status != null ? String(data.status).trim().toLowerCase() : office.status,
   });
 }
 
@@ -61,64 +66,35 @@ export async function deleteOffice(officeId) {
 
 export async function getOfficeDetails(officeId) {
   const office = await Office.findByPk(officeId);
-
   if (!office) return null;
 
-  const admins = await User.findAll({
+  // Admins = employees with admin role_id in this office
+  const admins = await Employee.findAll({
     where: {
       SameDeptCode: office.code,
-      role_id: {
-        [Op.in]: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
+      role_id: ROLES.ADMIN,
     },
-    attributes: ["user_id", "email", "SameDeptCode", "EmployeeNo", "role_id"],
-    include: {
-      model: Employee,
-      attributes: ["EmployeeNo", "FirstName", "LastName", "SameDeptCode"],
-      required: false,
-    },
-    order: [["user_id", "ASC"]],
+    attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode", "role_id"],
+    order: [["LastName", "ASC"]],
+    raw: true,
   });
 
+  // Employees = active employees in this office
   const employees = await Employee.findAll({
     where: {
       SameDeptCode: office.code,
       DateFinish: null,
       SeparationType: null,
     },
-    attributes: ["EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode"],
+    attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode", "role_id"],
     order: [["LastName", "ASC"], ["FirstName", "ASC"]],
+    raw: true,
   });
 
-  const employeeNos = employees.map((emp) => emp.EmployeeNo).filter(Boolean);
-
-  let employeeAccounts = [];
-  if (employeeNos.length > 0) {
-    employeeAccounts = await User.findAll({
-      where: {
-        EmployeeNo: {
-          [Op.in]: employeeNos,
-        },
-      },
-      attributes: ["user_id", "email", "EmployeeNo", "role_id"],
-      raw: true,
-    });
-  }
-
-  const accountMap = new Map(
-    employeeAccounts.map((acc) => [acc.EmployeeNo, acc])
-  );
-
-  const employeesWithAccountStatus = employees.map((emp) => {
-    const plain = emp.toJSON();
-    const linkedAccount = accountMap.get(emp.EmployeeNo);
-
-    return {
-      ...plain,
-      hasAccount: !!linkedAccount,
-      account: linkedAccount || null,
-    };
-  });
+  const employeesWithAccountStatus = employees.map((emp) => ({
+    ...emp,
+    hasAccount: !!emp.Email && !!emp.Password, // or whatever signals an account exists
+  }));
 
   return {
     office,

@@ -7,13 +7,14 @@ import {
 } from "../services/officeServices.js";
 
 import { ROLES } from "../constants/roles.js";
+import { Office } from "../models/index.js";
 
 export async function getAllOffices(req, res) {
   try {
     const search = req.query.search || "";
     const status = req.query.status || "all";
 
-    const offices = await getOffices({ search, status });
+    const offices = await getOffices(req.query, req.user);
 
     return res.status(200).json({
       success: true,
@@ -139,6 +140,47 @@ export async function getOfficeDetailsController(req, res) {
     });
   } catch (err) {
     console.error("Get office details error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+}
+
+export async function getMyOfficeController(req, res) {
+  try {
+    const officeCode = req.user?.SameDeptCode;
+
+if (!officeCode) {
+  return res.status(400).json({
+    success: false,
+    message: "User office code not found in token",
+  });
+}
+
+    const office = await Office.findOne({
+      where: { code: officeCode },
+    });
+
+    if (!office) {
+      return res.status(404).json({
+        success: false,
+        message: "Office not found",
+      });
+    }
+
+    const details = await getOfficeDetails(office.office_id);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+  office: details.office,
+  admins: details.admins,
+  employees: details.employees
+}
+    });
+  } catch (err) {
+    console.error("Get my office error:", err);
     return res.status(500).json({
       success: false,
       message: "Server Error",

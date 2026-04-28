@@ -67,7 +67,7 @@ export default function OfficeTable({
                     <Button
                       variant="secondary"
                       type="button"
-                      onClick={() => onViewDetails?.(office)}
+                      onClick={() => onViewDetails?.(office.office_id)}
                     >
                       View Details
                     </Button>
