@@ -1,6 +1,6 @@
 import { Record, Employee } from "../models/index.js";
 import puppeteer from "puppeteer";
-import { Op } from "sequelize";
+import { Op, where as sequelizeWhere, fn, col } from "sequelize";
 import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
 import fs from "fs";
 import path from "path";

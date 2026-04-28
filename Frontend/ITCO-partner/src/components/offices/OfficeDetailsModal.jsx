@@ -40,8 +40,8 @@ export default function CreateEmployeeAccountModal({
             <div>
               <div className="text-sm font-semibold text-slate-900">{fullName}</div>
               <div className="text-xs text-slate-400">
-                {selectedEmployee.EmployeeNo}
-                {selectedEmployee.Email ? ` · ${selectedEmployee.Email}` : ""}
+                {selectedEmployee?.EmployeeId ? `ID: ${selectedEmployee.EmployeeId}` : ""}
+                {selectedEmployee?.Email ? ` · ${selectedEmployee.Email}` : ""}
               </div>
             </div>
           </div>

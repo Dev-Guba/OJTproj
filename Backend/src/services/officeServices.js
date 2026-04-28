@@ -68,83 +68,37 @@ export async function getOfficeDetails(officeId) {
   const office = await Office.findByPk(officeId);
   if (!office) return null;
 
-  const admins = await User.findAll({
+  // Admins = employees with admin role_id in this office
+  const admins = await Employee.findAll({
     where: {
       SameDeptCode: office.code,
       role_id: ROLES.ADMIN,
     },
-    attributes: ["user_id", "email", "EmployeeId", "EmployeeNo", "SameDeptCode", "role_id"],
-    order: [["user_id", "ASC"]],
+    attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode", "role_id"],
+    order: [["LastName", "ASC"]],
     raw: true,
   });
 
-  const adminEmployeeIds = admins.map((a) => a.EmployeeId).filter(Boolean);
-
-  let adminEmployees = [];
-  if (adminEmployeeIds.length > 0) {
-    adminEmployees = await Employee.findAll({
-      where: {
-        EmployeeId: {
-          [Op.in]: adminEmployeeIds,
-        },
-      },
-      attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "SameDeptCode"],
-      raw: true,
-    });
-  }
-
-  const adminEmployeeMap = new Map(
-    adminEmployees.map((e) => [e.EmployeeId, e])
-  );
-
-  const adminsWithEmployee = admins.map((admin) => ({
-    ...admin,
-    Employee: admin.EmployeeId ? adminEmployeeMap.get(admin.EmployeeId) || null : null,
-  }));
-
+  // Employees = active employees in this office
   const employees = await Employee.findAll({
     where: {
       SameDeptCode: office.code,
       DateFinish: null,
       SeparationType: null,
     },
-    attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode"],
+    attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode", "role_id"],
     order: [["LastName", "ASC"], ["FirstName", "ASC"]],
     raw: true,
   });
 
-  const employeeIds = employees.map((e) => e.EmployeeId).filter(Boolean);
-
-  let employeeAccounts = [];
-  if (employeeIds.length > 0) {
-    employeeAccounts = await User.findAll({
-      where: {
-        EmployeeId: {
-          [Op.in]: employeeIds,
-        },
-      },
-      attributes: ["user_id", "email", "EmployeeId", "role_id", "SameDeptCode"],
-      raw: true,
-    });
-  }
-
-  const accountMap = new Map(
-    employeeAccounts.map((acc) => [acc.EmployeeId, acc])
-  );
-
-  const employeesWithAccountStatus = employees.map((emp) => {
-    const linkedAccount = accountMap.get(emp.EmployeeId);
-
-    return {
-      ...emp,
-      hasAccount: !!linkedAccount,
-      account: linkedAccount || null,
-    };
-  });
+  const employeesWithAccountStatus = employees.map((emp) => ({
+    ...emp,
+    hasAccount: !!emp.Email && !!emp.Password, // or whatever signals an account exists
+  }));
 
   return {
     office,
-    admins: adminsWithEmployee,
+    admins,
     employees: employeesWithAccountStatus,
   };
 }

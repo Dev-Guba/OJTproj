@@ -13,24 +13,26 @@ import { ROLES } from "../../utils/roles";
 
 
 export default function OfficeDetailsPage() {
-  const params = useParams();
+const params = useParams();
 const location = useLocation();
+const navigate = useNavigate();
 
 const id = params?.id;
+const isMe = location.pathname.endsWith("/me");
 
-console.log("PARAMS:", params);
-console.log("LOCATION:", location.pathname);
-
-  console.log("ROUTE ID:", id);
-
-if (!id) {
+if (!id && !isMe) {
   return (
     <div className="text-red-600">
       Invalid office ID
     </div>
   );
 }
-  const navigate = useNavigate();
+
+console.log("PARAMS:", params);
+console.log("LOCATION:", location.pathname);
+
+console.log("ROUTE ID:", id);
+
 
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ if (!id) {
   const loadDetails = async () => {
     try {
       setLoading(true);
-      const res = await officeApi.getDetails(id);
+      const res = isMe ? await officeApi.getMyDetails() : await officeApi.getDetails(id);
       setDetails({
   office: res.data?.data?.office,
   admins: res.data?.data?.admins || [],
@@ -62,7 +64,7 @@ if (!id) {
 
   useEffect(() => {
     loadDetails();
-  }, [id]);
+  }, [id, isMe]);
 
   const setField = (key) => (e) => {
     setForm((prev) => ({
