@@ -5,9 +5,7 @@ const officeApi = {
     return Http.get("/offices", { params });
   },
 
-  getDetails: (id) => {
-    return Http.get(`/offices/${id}/details`);
-  },
+  getDetails: (id) => Http.get(`/offices/${id}/details`),
 
   create: (data) => {
     return Http.post("/offices", data);

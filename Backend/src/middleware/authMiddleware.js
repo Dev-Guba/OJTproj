@@ -11,7 +11,12 @@ export function requireAuth(req, res, next) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded; 
+    req.user = {
+      ...decoded,
+      SameDeptCode: decoded.officeCode,   // 👈 map officeCode → SameDeptCode
+      role_id: decoded.roleId,            // 👈 map roleId → role_id
+      EmployeeNo: decoded.employeeNo,     // 👈 map employeeNo → EmployeeNo
+    };
 
     next();
   } catch (err) {

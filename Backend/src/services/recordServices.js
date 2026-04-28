@@ -212,6 +212,8 @@ export async function createRecord(data, user) {
     payload.office = user.SameDeptCode;
   }
 
+  console.log("createRecord received data:", data);
+
   return await Record.create(payload);
 }
 

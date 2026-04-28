@@ -13,11 +13,12 @@ export async function getOffices(filters = {}, user) {
   }
 
   if (search) {
-    where[Op.or] = [
-      { code: { [Op.like]: `%${search}%` } },
-      { name: { [Op.like]: `%${search}%` } },
-    ];
-  }
+  where[Op.or] = [
+    { code: { [Op.like]: `%${search}%` } },
+    { name: { [Op.like]: `%${search}%` } },
+    { description: { [Op.like]: `%${search}%` } }, // 👈 add this
+  ];
+}
 
   // 🔥 ONLY CHANGE (ROLE RESTRICTION)
   if (user?.role_id === ROLES.ADMIN) {
@@ -34,6 +35,7 @@ export async function createOffice(data) {
   return await Office.create({
     code: String(data.code ?? "").trim().toUpperCase(),
     name: String(data.name ?? "").trim(),
+    description: data.description ? String(data.description).trim() : null,
     status: String(data.status ?? "active").trim().toLowerCase(),
   });
 }
@@ -49,10 +51,8 @@ export async function updateOffice(officeId, data) {
   return await office.update({
     code: data.code != null ? String(data.code).trim().toUpperCase() : office.code,
     name: data.name != null ? String(data.name).trim() : office.name,
-    status:
-      data.status != null
-        ? String(data.status).trim().toLowerCase()
-        : office.status,
+    description: data.description != null ? String(data.description).trim() : office.description,
+    status: data.status != null ? String(data.status).trim().toLowerCase() : office.status,
   });
 }
 

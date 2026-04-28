@@ -17,7 +17,7 @@ export const recordsApi = {
 },
 
   async create(payload) {
-    const res = await Http.post("/records", payload);
+    const res = await Http.post("/records/create", payload);
     return res.data;
   },
 
