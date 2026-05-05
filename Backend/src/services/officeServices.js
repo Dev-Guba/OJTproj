@@ -16,7 +16,6 @@ export async function getOffices(filters = {}, user) {
   where[Op.or] = [
     { code: { [Op.like]: `%${search}%` } },
     { name: { [Op.like]: `%${search}%` } },
-    { description: { [Op.like]: `%${search}%` } }, // 👈 add this
   ];
 }
 

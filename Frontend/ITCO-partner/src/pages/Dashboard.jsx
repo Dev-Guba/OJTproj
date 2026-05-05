@@ -16,10 +16,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4">
-        <div className="text-lg font-semibold text-slate-900">{headerTitle}</div>
-        <div className="mt-1 text-sm text-slate-600">{headerSubtitle}</div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="px-6 py-6">
+    <div className="flex items-center gap-4">
+      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-3xl">
+        🏛️
       </div>
+
+      <div>
+        <div className="text-xl font-bold text-slate-900">
+          {headerTitle}
+        </div>
+        <div className="mt-1 text-sm text-slate-500">
+          {headerSubtitle}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {isSuperAdmin ? (

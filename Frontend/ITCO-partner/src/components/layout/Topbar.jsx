@@ -55,7 +55,7 @@ export default function Topbar({ onMenu, right = null }) {
   const header = getHeader(pathname);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
       <div className="flex items-center justify-between px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
           <button
@@ -76,13 +76,15 @@ export default function Topbar({ onMenu, right = null }) {
         </div>
 
         <div className="flex items-center gap-3">
-          {right}
+  {right}
 
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-700">
-            <span className="h-2 w-2 rounded-full bg-blue-500" />
-            <span className="font-medium">{user?.email ?? "User"}</span>
-          </div>
-        </div>
+  <div className="hidden sm:flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs text-slate-700">
+  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+    {user?.email?.[0]?.toUpperCase() ?? "U"}
+  </span>
+  <span className="font-medium">{user?.email ?? "User"}</span>
+</div>
+</div>
       </div>
     </header>
   );

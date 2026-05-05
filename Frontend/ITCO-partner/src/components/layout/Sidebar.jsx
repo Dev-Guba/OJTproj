@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import Button from "../ui/Button";
 import { useEffect, useMemo, useState } from "react";
 import { ROLES } from "../../utils/roles";
+import logo from "../../assets/Official_seal.png";
 
 const NavItem = ({ to, label, icon, onClick }) => (
   <NavLink
@@ -10,20 +11,14 @@ const NavItem = ({ to, label, icon, onClick }) => (
     onClick={onClick}
     className={({ isActive }) =>
       [
-        "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition",
+        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition",
         isActive
-          ? "bg-blue-600 text-white shadow-sm active"
-          : "text-slate-700 hover:bg-blue-50 hover:text-blue-700",
+          ? "bg-blue-600 text-white shadow-sm"
+          : "text-white/80 hover:bg-blue-500/20 hover:text-white",
       ].join(" ")
     }
   >
-    <span
-      className={[
-        "grid h-9 w-9 place-items-center rounded-xl text-base transition",
-        "bg-slate-100 text-slate-600",
-        "group-[.active]:bg-white/15 group-[.active]:text-white",
-      ].join(" ")}
-    >
+    <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-sm text-white/90 transition group-hover:bg-white/15 group-hover:text-white">
       {icon}
     </span>
     <span className="font-medium">{label}</span>
@@ -56,56 +51,48 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-slate-900/30 md:hidden"
-          onClick={onClose}
-        />
-      )}
 
-      <aside
-        className={[
-          "fixed md:static z-40 h-screen w-72 shrink-0 border-r border-slate-200 bg-white px-4 py-5",
-          "transition-transform md:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        ].join(" ")}
-      >
+
+    <aside className="h-screen w-72 shrink-0 bg-[#08204a] px-4 py-5 text-white shadow-xl">
+
         <div className="flex h-full flex-col">
+          {/* LOGO / BRAND */}
           <button
             type="button"
             onClick={() => {
               navigate("/dashboard");
               closeMobile();
             }}
-            className="mb-6 w-full text-left"
+            className="mb-5 w-full text-left"
           >
-            <div className="flex items-center gap-3 rounded-2xl p-2 hover:bg-slate-50">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-600 text-white shadow-sm">
-                A
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900">
-                  Asset Manager
-                </div>
-                <div className="text-xs text-slate-500">Admin Panel</div>
-              </div>
-            </div>
+            <div className="flex items-center gap-3 px-3 py-2">
+  <img
+    src={logo}
+    alt="Official Seal"
+    className="h-11 w-11 object-contain"
+  />
+
+  <span className="text-base font-semibold text-white">
+    Capitol Site
+  </span>
+</div>
           </button>
 
+          {/* NAVIGATION */}
           <div className="space-y-2">
             <button
               type="button"
               onClick={() => setManageOpen((v) => !v)}
               className={[
-                "w-full group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition text-left",
+                "w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition text-left",
                 manageActive
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-700 hover:bg-blue-50 hover:text-blue-700",
+  ? "bg-blue-600 text-white shadow-sm"
+  : "text-white/80 hover:bg-blue-500/20 hover:text-white",
               ].join(" ")}
             >
               <span
                 className={[
-                  "grid h-9 w-9 place-items-center rounded-xl text-base transition",
+                  "grid h-9 w-9 place-items-center rounded-lg text-sm transition",
                   manageActive
                     ? "bg-white/15 text-white"
                     : "bg-slate-100 text-slate-600",
@@ -127,7 +114,7 @@ export default function Sidebar({ open, onClose }) {
             </button>
 
             {manageOpen && (
-              <div className="mt-1 ml-6 space-y-1.5">
+              <div className="ml-6 mt-1 space-y-1.5 border-l border-white/15 pl-3">
                 <NavItem
                   to="/dashboard/view"
                   label="View Records"
@@ -155,24 +142,23 @@ export default function Sidebar({ open, onClose }) {
               />
             )}
 
-           {isSuperAdmin && (
-  <NavItem
-    to="/dashboard/offices"
-    label="Office Management"
-    icon="🏢"
-    onClick={closeMobile}
-  />
-)}
+            {isSuperAdmin && (
+              <NavItem
+                to="/dashboard/offices"
+                label="Office Management"
+                icon="🏢"
+                onClick={closeMobile}
+              />
+            )}
 
-{isAdmin && (
-  <NavItem
-  to="/dashboard/offices/me"
-  label="My Office"
-  icon="🏢"
-  onClick={closeMobile}
-/>
-)}
-
+            {isAdmin && (
+              <NavItem
+                to="/dashboard/offices/me"
+                label="My Office"
+                icon="🏢"
+                onClick={closeMobile}
+              />
+            )}
 
             <NavItem
               to="/dashboard/settings"
@@ -182,24 +168,15 @@ export default function Sidebar({ open, onClose }) {
             />
           </div>
 
-          
-
           <div className="mt-auto pt-4">
-            <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
-              <div className="text-xs text-slate-500">Signed in as</div>
-              <div className="mt-1 text-sm font-medium text-slate-800 break-all">
-                {user?.email ?? "User"}
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={logout}
-            >
-              ⎋ Logout
-            </Button>
-          </div>
+  <Button
+    variant="outline"
+    className="w-full justify-start rounded-xl"
+    onClick={logout}
+  >
+    ⎋ Logout
+  </Button>
+</div>
         </div>
       </aside>
     </>
