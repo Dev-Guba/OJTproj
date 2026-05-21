@@ -1,13 +1,10 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
+import logo from "../../assets/Official_seal.png";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext";
-
-// ✅ background image (make sure the filename matches exactly)
 import bgImage from "../../assets/Login_background.JPG";
 
 export default function Login() {
@@ -17,91 +14,84 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  const set = (key) => (e) =>
+    setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const onSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!form.email.trim() || !form.password) {
-    toast.error("Please enter your email and password.");
-    return;
-  }
+    if (!form.email.trim() || !form.password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  const result = await login({
-    email: form.email.trim(),
-    password: form.password,
-  });
+    const result = await login({
+      email: form.email.trim(),
+      password: form.password,
+    });
 
-  if (result.ok) {
-    toast.success("Login successful!");
-    navigate("/dashboard", { replace: true });
-  } else {
-    toast.error(result.error || "Invalid credentials.");
-  }
+    if (result.ok) {
+      toast.success("Login successful!");
+      navigate("/dashboard", { replace: true });
+    } else {
+      toast.error(result.error || "Invalid credentials.");
+    }
 
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center relative px-4"
+      className="relative flex min-h-screen items-center justify-center bg-cover bg-center px-4"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
-      {/* dark overlay */}
-      <div className="absolute inset-0 bg-linear-to-br from-black/70 via-black/50 to-black/70" />
+      <div className="absolute inset-0 bg-slate-950/70" />
 
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/30 bg-white/90 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="mb-8 text-center">
+         <img
+  src={logo}
+  alt="Official Seal"
+  className="mx-auto mb-4 h-16 w-16 object-contain"
+/>
 
-      {/* Login Card */}
-<div className="relative z-10 w-full max-w-md rounded-2xl 
-                bg-white/60 backdrop-blur-xl 
-                shadow-[0_25px_60px_rgba(0,0,0,0.45)] 
-                border border-white/30 
-                p-8 transition-all duration-300">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+            Provincial Administrator's Office
+          </h1>
 
-  {/* Header */}
-  <div className="mb-6 text-center">
-    <h1 className="text-xl font-semibold tracking-wide text-gray-900">
-      Provincial Administrator's Office
-    </h1>
-    <p className="text-sm text-gray-600 mt-1">
-      Records Management System
-    </p>
-  </div>
+          <p className="mt-1 text-sm text-slate-500">
+            Records Management System
+          </p>
+        </div>
 
-  {/* Form */}
-  <form onSubmit={onSubmit} className="space-y-4">
-    <Input
-      label="Email"
-      type="email"
-      placeholder="Enter your email"
-      value={form.email}
-      onChange={set("email")}
-    />
+        <form onSubmit={onSubmit} className="space-y-4">
+          <Input
+            label="Email"
+            type="email"
+            placeholder="Enter your email"
+            value={form.email}
+            onChange={set("email")}
+          />
 
-    <Input
-      label="Password"
-      type="password"
-      placeholder="Enter your password"
-      value={form.password}
-      onChange={set("password")}
-    />
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Enter your password"
+            value={form.password}
+            onChange={set("password")}
+          />
 
-    <Button
-      type="submit"
-      disabled={loading}
-      className="w-full bg-gray-900 hover:bg-black text-white transition-all duration-200"
-    >
-      {loading ? "Logging in..." : "Login"}
-    </Button>
-  </form>
+          <Button type="submit" loading={loading} className="mt-2 w-full">
+            Login
+          </Button>
+        </form>
 
-  {/* Footer */}
-  <div className="mt-6 text-center text-xs text-gray-500">
-    © {new Date().getFullYear()} Provincial Administrator's Office
-  </div>
-</div>
+        <div className="mt-6 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} Provincial Administrator's Office
+        </div>
+      </div>
     </div>
   );
 }

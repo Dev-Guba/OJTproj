@@ -1,5 +1,22 @@
 import Button from "../ui/Button";
 
+function StatusBadge({ status }) {
+  const isActive = status === "active";
+
+  return (
+    <span
+      className={[
+        "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold capitalize",
+        isActive
+          ? "bg-green-50 text-green-700 ring-1 ring-green-200"
+          : "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+      ].join(" ")}
+    >
+      {status}
+    </span>
+  );
+}
+
 export default function OfficeTable({
   offices = [],
   loading = false,
@@ -9,92 +26,90 @@ export default function OfficeTable({
   onViewDetails,
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border-collapse">
-        <thead className="bg-slate-50 text-slate-700">
-          <tr>
-            <th className="border border-slate-200 px-4 py-3 text-left">ID</th>
-            <th className="border border-slate-200 px-4 py-3 text-left">Code</th>
-            <th className="border border-slate-200 px-4 py-3 text-left">Name</th>
-            <th className="border border-slate-200 px-4 py-3 text-left">Status</th>
-            <th className="border border-slate-200 px-4 py-3 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td
-                colSpan={5}
-                className="border border-slate-200 px-4 py-8 text-center text-slate-500"
-              >
-                Loading offices...
-              </td>
+    <div className="overflow-hidden border-t border-slate-200">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th className="px-5 py-3">ID</th>
+              <th className="px-5 py-3">Code</th>
+              <th className="px-5 py-3">Office Name</th>
+              <th className="px-5 py-3">Status</th>
+              <th className="px-5 py-3 text-right">Actions</th>
             </tr>
-          ) : offices.length === 0 ? (
-            <tr>
-              <td
-                colSpan={5}
-                className="border border-slate-200 px-4 py-8 text-center text-slate-500"
-              >
-                No offices found.
-              </td>
-            </tr>
-          ) : (
-            offices.map((office) => (
-              <tr key={office.office_id} className="hover:bg-slate-50">
-                <td className="border border-slate-200 px-4 py-3">
-                  {office.office_id}
-                </td>
-                <td className="border border-slate-200 px-4 py-3 font-medium text-slate-900">
-                  {office.code}
-                </td>
-                <td className="border border-slate-200 px-4 py-3">
-                  {office.name}
-                </td>
-                <td className="border border-slate-200 px-4 py-3">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      office.status === "active"
-                        ? "bg-blue-50 text-blue-700"
-                        : "bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {office.status}
-                  </span>
-                </td>
-                <td className="border border-slate-200 px-4 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      onClick={() => onViewDetails?.(office.office_id)}
-                    >
-                      View Details
-                    </Button>
+          </thead>
 
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      onClick={() => onEdit?.(office)}
-                    >
-                      Edit
-                    </Button>
-
-                    <Button
-                      variant="danger"
-                      type="button"
-                      loading={deletingId === office.office_id}
-                      onClick={() => onDelete?.(office)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-5 py-10 text-center text-slate-500">
+                  Loading offices...
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : offices.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-5 py-10 text-center text-slate-500">
+                  No offices found.
+                </td>
+              </tr>
+            ) : (
+              offices.map((office) => (
+                <tr
+                  key={office.office_id}
+                  className="transition hover:bg-slate-50"
+                >
+                  <td className="px-5 py-4 text-slate-500">
+                    #{office.office_id}
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <span className="font-semibold text-slate-900">
+                      {office.code}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-4 text-slate-700">
+                    {office.name}
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <StatusBadge status={office.status} />
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        type="button"
+                        onClick={() => onViewDetails?.(office.office_id)}
+                      >
+                        Details
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={() => onEdit?.(office)}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
+                        variant="danger"
+                        type="button"
+                        loading={deletingId === office.office_id}
+                        onClick={() => onDelete?.(office)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
