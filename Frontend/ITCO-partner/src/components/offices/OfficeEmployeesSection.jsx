@@ -4,9 +4,12 @@ import Button from "../ui/Button";
 function EmployeeAccountBadge({ hasAccount }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        hasAccount ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
-      }`}
+      className={[
+        "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold",
+        hasAccount
+          ? "bg-green-50 text-green-700 ring-1 ring-green-200"
+          : "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+      ].join(" ")}
     >
       {hasAccount ? "Has Account" : "No Account"}
     </span>
@@ -15,11 +18,13 @@ function EmployeeAccountBadge({ hasAccount }) {
 
 function Initials({ name }) {
   const parts = name?.trim().split(" ") ?? [];
-  const letters = parts.length >= 2
-    ? `${parts[0][0]}${parts[parts.length - 1][0]}`
-    : (parts[0]?.[0] ?? "?");
+  const letters =
+    parts.length >= 2
+      ? `${parts[0][0]}${parts[parts.length - 1][0]}`
+      : parts[0]?.[0] ?? "?";
+
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 uppercase">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 uppercase">
       {letters}
     </div>
   );
@@ -52,7 +57,6 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
 
   const goTo = (n) => setPage(Math.min(Math.max(1, n), totalPages));
 
-  // Reset to page 1 when search changes
   const handleSearch = (e) => {
     setSearch(e.target.value);
     setPage(1);
@@ -60,57 +64,79 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* HEADER */}
+      <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-slate-900">
-            Employees Under This Office
+            Employees
           </div>
-          <div className="mt-0.5 text-xs text-slate-400">
+          <div className="mt-0.5 text-xs text-slate-500">
             {employees.length} employee(s) assigned
           </div>
         </div>
+
         <input
           type="text"
-          placeholder="Search employees..."
+          placeholder="Search employee..."
           value={search}
           onChange={handleSearch}
-          className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 sm:w-52"
+          className="
+            w-full sm:w-56
+            rounded-xl border border-slate-300
+            bg-white px-3 py-2 text-sm
+            text-slate-700 placeholder:text-slate-400
+            outline-none transition
+            focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+          "
         />
       </div>
 
-      <div className="px-4 py-4">
+      {/* BODY */}
+      <div className="px-5 py-4">
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
-            {search ? "No employees match your search." : "No active employees found."}
+            {search ? "No employees match your search." : "No employees found."}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {paginated.map((emp) => {
-              const fullName = [emp.FirstName, emp.LastName].filter(Boolean).join(" ");
+              const fullName = [emp.FirstName, emp.LastName]
+                .filter(Boolean)
+                .join(" ");
+
               return (
                 <div
                   key={emp.EmployeeNo}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                  className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50"
                 >
                   <Initials name={fullName} />
+
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-slate-900">
+                    <div className="text-sm font-semibold text-slate-900">
                       {fullName || "-"}
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-400">
+
+                    <div className="mt-0.5 text-xs text-slate-500">
                       {emp.EmployeeNo}
                       {emp.Email ? ` · ${emp.Email}` : ""}
                     </div>
+
                     {emp.account?.email && (
-                      <div className="mt-0.5 text-xs text-blue-500">
+                      <div className="mt-0.5 text-xs text-blue-600">
                         {emp.account.email}
                       </div>
                     )}
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-2">
+
+                  <div className="flex flex-col items-end gap-2">
                     <EmployeeAccountBadge hasAccount={emp.hasAccount} />
+
                     {!emp.hasAccount && (
-                      <Button size="sm" type="button" onClick={() => onCreateAccount?.(emp)}>
+                      <Button
+                        size="sm"
+                        type="button"
+                        onClick={() => onCreateAccount?.(emp)}
+                      >
                         Create Account
                       </Button>
                     )}
@@ -121,11 +147,13 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
           </div>
         )}
 
+        {/* PAGINATION */}
         {filtered.length > PAGE_SIZE && (
-          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-            <span className="text-xs text-slate-400">
+          <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
+            <span className="text-xs text-slate-500">
               Page {safePage} of {totalPages}
             </span>
+
             <div className="flex gap-1">
               {[["First", 1], ["Prev", safePage - 1], ["Next", safePage + 1], ["Last", totalPages]].map(
                 ([label, target]) => (
