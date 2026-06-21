@@ -9,6 +9,7 @@ import {
   deleteOfficeController,
   getOfficeDetailsController,
   getMyOfficeController,
+  getPublicOfficesController,
 } from "../controller/officeController.js";
 import {
   createOfficeSchema,
@@ -16,6 +17,8 @@ import {
 } from "../validation/office.validation.js";
 
 const router = express.Router();
+
+router.get("/public", getPublicOfficesController);
 
 router.get("/", requireAuth, getAllOffices);
 router.get("/me", requireAuth, getMyOfficeController);

@@ -2,7 +2,7 @@
 node_modules/
 
 # env
-.env
+.env/
 
 # logs
 npm-debug.log*
@@ -15,6 +15,7 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+.env
 
 # build
 dist/

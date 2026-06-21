@@ -10,6 +10,7 @@ import { useAuth } from "./context/AuthContext";
 import AdminManagement from "./pages/superadmin/AdminManagement";
 import OfficeManagement from "./pages/superadmin/OfficeManagement";
 import OfficeDetailsPage from "./pages/superadmin/OfficeDetailsPage";
+import RegisterAccount from "./pages/auth/RegisterAccount";
 
 function Protected({ children }) {
   const { user, authReady } = useAuth();
@@ -22,6 +23,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path="/RegisterAccount" element={<RegisterAccount />} />
 
       <Route
         path="/dashboard"

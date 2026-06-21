@@ -4,6 +4,7 @@ import {
   updateOffice,
   deleteOffice,
   getOfficeDetails,
+  getPublicOffice,
 } from "../services/officeServices.js";
 
 import { ROLES } from "../constants/roles.js";
@@ -181,6 +182,22 @@ if (!officeCode) {
     });
   } catch (err) {
     console.error("Get my office error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+}
+
+export async function getPublicOfficesController(req, res) {
+  try {
+    const offices = await getPublicOffice();
+    return res.status(200).json({
+      success: true,
+      data: offices,
+    });
+  } catch (err) {
+    console.error("Get public offices error:", err);
     return res.status(500).json({
       success: false,
       message: "Server Error",

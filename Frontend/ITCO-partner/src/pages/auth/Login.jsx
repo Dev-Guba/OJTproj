@@ -86,6 +86,16 @@ export default function Login() {
           <Button type="submit" loading={loading} className="mt-2 w-full">
             Login
           </Button>
+          <p className="text-center text-sm text-slate-500">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/RegisterAccount")}
+              className="font-medium text-slate-900 underline-offset-2 hover:underline"
+            >
+              Register here
+            </button>
+          </p>
         </form>
 
         <div className="mt-6 text-center text-xs text-slate-500">

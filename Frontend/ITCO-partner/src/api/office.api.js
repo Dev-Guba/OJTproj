@@ -5,6 +5,10 @@ const officeApi = {
     return Http.get("/offices", { params });
   },
 
+  getPublic: () => {
+    return Http.get("/offices/public");
+  },
+
   getDetails: (id) => Http.get(`/offices/${id}/details`),
   getMyDetails: () => Http.get("/offices/me"),
 

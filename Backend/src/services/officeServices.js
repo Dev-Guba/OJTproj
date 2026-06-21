@@ -101,3 +101,11 @@ export async function getOfficeDetails(officeId) {
     employees: employeesWithAccountStatus,
   };
 }
+
+export async function getPublicOffice() {
+  return await Office.findAll({
+    where: {
+      status: "active",
+    },
+  });
+}

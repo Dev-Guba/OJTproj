@@ -10,4 +10,5 @@ const router = express.Router();
 router.get("/", requireAuth, getEmployees);
 router.post("/accounts", requireAuth, createEmployeeAccountController);
 
+
 export default router;
