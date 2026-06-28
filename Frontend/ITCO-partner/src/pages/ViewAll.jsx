@@ -18,7 +18,6 @@ export default function ViewAll() {
   const isSuperAdmin = user?.role_id === ROLES.SUPER_ADMIN;
   const isAdmin = user?.role_id === ROLES.ADMIN;
   const isEmployee = user?.role_id === ROLES.EMPLOYEE;
-
   const canManageRecords = isSuperAdmin || isAdmin;
 
   const [items, setItems] = useState([]);
@@ -43,7 +42,6 @@ export default function ViewAll() {
     try {
       setLoading(true);
       setError("");
-
       const res = await recordsApi.getAll({
         page,
         limit: PAGE_SIZE,
@@ -51,7 +49,6 @@ export default function ViewAll() {
         sortKey: sort.key,
         sortDir: sort.dir,
       });
-
       setItems(res.rows || []);
       setTotal(res.total || 0);
     } catch {
@@ -62,16 +59,11 @@ export default function ViewAll() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 400);
-
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    loadData();
-  }, [page, debouncedSearch, sort]);
+  useEffect(() => { loadData(); }, [page, debouncedSearch, sort]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -89,10 +81,7 @@ export default function ViewAll() {
       await recordsApi.remove(confirm.id);
       toast.success("Record removed.");
       setConfirm({ open: false, id: null });
-
-      const isLastItemOnPage = items.length === 1 && page > 1;
-
-      if (isLastItemOnPage) {
+      if (items.length === 1 && page > 1) {
         setPage((p) => p - 1);
       } else {
         loadData();
@@ -112,13 +101,10 @@ export default function ViewAll() {
         includeHeader: reportIncludeHeader,
         includePageNumbers: reportIncludePageNumbers,
       });
-
       const blob = new Blob([res.data], { type: "application/pdf" });
-
       const cd = res.headers?.["content-disposition"] || "";
       const match = cd.match(/filename="(.+?)"/);
       const filename = match?.[1] || "ICTO-Records-Report.pdf";
-
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -127,31 +113,27 @@ export default function ViewAll() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-
       toast.success("Report downloaded.", { id: t });
     } catch {
       toast.error("Failed to generate report.", { id: t });
     }
   };
 
-  const confirmGenerateReport = async () => {
-    setReportOpen(false);
-    await onGenerateReport();
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <RecordsToolbar
         search={search}
-        onSearchChange={(e) => {
-          setSearch(e.target.value);
-          setPage(1);
-        }}
+        onSearchChange={(e) => { setSearch(e.target.value); setPage(1); }}
         onOpenReport={() => setReportOpen(true)}
       />
 
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-4 w-4 shrink-0" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
           {error}
         </div>
       )}
@@ -163,7 +145,7 @@ export default function ViewAll() {
         user={user}
       />
 
-      <div className="border bg-white shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <RecordsTable
           rows={items}
           sort={sort}
@@ -173,7 +155,6 @@ export default function ViewAll() {
           onEdit={(id) => navigate(`/dashboard/add?edit=${id}`)}
           onDelete={(id) => setConfirm({ open: true, id })}
         />
-
         <RecordsPagination
           page={page}
           totalPages={totalPages}
@@ -192,7 +173,7 @@ export default function ViewAll() {
         reportIncludeHeader={reportIncludeHeader}
         reportIncludePageNumbers={reportIncludePageNumbers}
         onClose={() => setReportOpen(false)}
-        onConfirm={confirmGenerateReport}
+        onConfirm={async () => { setReportOpen(false); await onGenerateReport(); }}
         setReportPaper={setReportPaper}
         setReportPerPage={setReportPerPage}
         setReportIncludeHeader={setReportIncludeHeader}

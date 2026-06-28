@@ -8,6 +8,12 @@ const employeeApi = {
   createAccount: (data) => {
     return Http.post("/employees/accounts", data);
   },
+
+    createEmployee: (data) => Http.post("/employees/create", data),
+  updateAccount: (EmployeeNo, data) => Http.put(`/employees/accounts/${EmployeeNo}`, data),
+  deleteEmployee: (EmployeeNo) => Http.delete(`/employees/${EmployeeNo}`),
 };
+
+
 
 export default employeeApi;

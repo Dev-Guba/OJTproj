@@ -7,54 +7,46 @@ import Button from "../../components/ui/Button";
 import OfficeSummary from "../../components/offices/OfficeSummary";
 import OfficeAdminsSection from "../../components/offices/OfficeAdminsSection";
 import OfficeEmployeesSection from "../../components/offices/OfficeEmployeesSection";
-import CreateEmployeeAccountModal from "../../components/offices/CreateEmployeeAccountModal";
-import { adminApi } from "../../api/admin.api";
-import { ROLES } from "../../utils/roles";
-
+import CreateEmployeeModal from "../../components/offices/CreateEmployeeModal";
+import EditEmployeeModal from "../../components/offices/EditEmployeeModal";
 
 export default function OfficeDetailsPage() {
-const params = useParams();
-const location = useLocation();
-const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-const id = params?.id;
-const isMe = location.pathname.endsWith("/me");
+  const id = params?.id;
+  const isMe = location.pathname.endsWith("/me");
 
-if (!id && !isMe) {
-  return (
-    <div className="text-red-600">
-      Invalid office ID
-    </div>
-  );
-}
-
-console.log("PARAMS:", params);
-console.log("LOCATION:", location.pathname);
-
-console.log("ROUTE ID:", id);
-
-
+  // existing state
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [openCreate, setOpenCreate] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [creating, setCreating] = useState(false);
+  // create employee state
+  const [openCreateEmployee, setOpenCreateEmployee] = useState(false);
+  const [createEmployeeForm, setCreateEmployeeForm] = useState({ email: "", password: "" });
+  const [creatingEmployee, setCreatingEmployee] = useState(false);
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  // edit employee state
+  const [openEditEmployee, setOpenEditEmployee] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [editForm, setEditForm] = useState({ email: "", password: "" });
+  const [savingEmployee, setSavingEmployee] = useState(false);
+
+  const [deletingEmployee, setDeletingEmployee] = useState(null);
+
 
   const loadDetails = async () => {
     try {
       setLoading(true);
-      const res = isMe ? await officeApi.getMyDetails() : await officeApi.getDetails(id);
+      const res = isMe
+        ? await officeApi.getMyDetails()
+        : await officeApi.getDetails(id);
       setDetails({
-  office: res.data?.data?.office,
-  admins: res.data?.data?.admins || [],
-  employees: res.data?.data?.employees || [],
-});
+        office: res.data?.data?.office,
+        admins: res.data?.data?.admins || [],
+        employees: res.data?.data?.employees || [],
+      });
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to load office details.");
     } finally {
@@ -66,55 +58,82 @@ console.log("ROUTE ID:", id);
     loadDetails();
   }, [id, isMe]);
 
-  const setField = (key) => (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [key]: e.target.value,
-    }));
-  };
 
-  const handleOpenCreate = (emp) => {
-    setSelectedEmployee(emp);
-    setForm({
-      email: emp.Email || "",
-      password: "",
-    });
-    setOpenCreate(true);
-  };
+  // create employee handlers
+  const setCreateField = (key) => (e) =>
+    setCreateEmployeeForm((prev) => ({ ...prev, [key]: e.target.value }));
 
-  const handleCreateAccount = async () => {
+  const handleCreateEmployee = async () => {
     try {
-      if (!form.email || !form.password) {
-        toast.error("Email and password required.");
+      if (!createEmployeeForm.email || !createEmployeeForm.password) {
+        toast.error("Email and password are required.");
         return;
       }
-
-      setCreating(true);
-
-      await adminApi.createUser({
-  email: form.email,
-  password: form.password,
-  role_id: ROLES.EMPLOYEE, // 🔥 ALWAYS employee
-  EmployeeNo: selectedEmployee.EmployeeNo,
-  SameDeptCode: selectedEmployee.SameDeptCode,
-});
-
-      toast.success("Employee account created.");
-      setOpenCreate(false);
-      setSelectedEmployee(null);
-      setForm({ email: "", password: "" });
+      setCreatingEmployee(true);
+      await employeeApi.createEmployee(createEmployeeForm);
+      toast.success("Employee created successfully.");
+      setOpenCreateEmployee(false);
+      setCreateEmployeeForm({ email: "", password: "" });
       await loadDetails();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create account.");
+      toast.error(err?.response?.data?.message || "Failed to create employee.");
     } finally {
-      setCreating(false);
+      setCreatingEmployee(false);
     }
   };
+
+  // edit employee handlers
+  const setEditField = (key) => (e) =>
+    setEditForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const handleOpenEditEmployee = (emp) => {
+    setEditTarget(emp);
+    setEditForm({ email: emp.account?.email || "", password: "" });
+    setOpenEditEmployee(true);
+  };
+
+  const handleEditEmployee = async () => {
+    try {
+      if (!editForm.email) {
+        toast.error("Email is required.");
+        return;
+      }
+      setSavingEmployee(true);
+      await employeeApi.updateAccount(editTarget.EmployeeNo, editForm);
+      toast.success("Account updated successfully.");
+      setOpenEditEmployee(false);
+      setEditTarget(null);
+      setEditForm({ email: "", password: "" });
+      await loadDetails();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update account.");
+    } finally {
+      setSavingEmployee(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (emp) => {
+  if (!window.confirm(`Delete ${emp.FirstName} ${emp.LastName}? This cannot be undone.`)) return;
+
+  try {
+    setDeletingEmployee(emp.EmployeeNo);
+    await employeeApi.deleteEmployee(emp.EmployeeNo);
+    toast.success("Employee deleted successfully.");
+    await loadDetails();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to delete employee.");
+  } finally {
+    setDeletingEmployee(null);
+  }
+};
 
   const office = details?.office;
   const admins = details?.admins || [];
   const employees = details?.employees || [];
-  console.log("EMPLOYEES:", employees);
+
+  if (!id && !isMe) {
+    return <div className="text-red-600">Invalid office ID</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -163,24 +182,41 @@ console.log("ROUTE ID:", id);
             <OfficeAdminsSection admins={admins} />
             <OfficeEmployeesSection
               employees={employees}
-              onCreateAccount={handleOpenCreate}
+              onCreateEmployee={() => setOpenCreateEmployee(true)}
+              onEditEmployee={handleOpenEditEmployee}
+              onDeleteEmployee={handleDeleteEmployee}
+              deletingEmployee={deletingEmployee}  
             />
           </div>
         </>
       )}
 
-      <CreateEmployeeAccountModal
-        open={openCreate}
-        selectedEmployee={selectedEmployee}
-        form={form}
-        creating={creating}
+      {/* Create Employee Modal */}
+      <CreateEmployeeModal
+        open={openCreateEmployee}
+        form={createEmployeeForm}
+        creating={creatingEmployee}
         onClose={() => {
-          setOpenCreate(false);
-          setSelectedEmployee(null);
-          setForm({ email: "", password: "" });
+          setOpenCreateEmployee(false);
+          setCreateEmployeeForm({ email: "", password: "" });
         }}
-        onConfirm={handleCreateAccount}
-        onChange={setField}
+        onConfirm={handleCreateEmployee}
+        onChange={setCreateField}
+      />
+
+      {/* Edit Employee Modal */}
+      <EditEmployeeModal
+        open={openEditEmployee}
+        selectedEmployee={editTarget}
+        form={editForm}
+        saving={savingEmployee}
+        onClose={() => {
+          setOpenEditEmployee(false);
+          setEditTarget(null);
+          setEditForm({ email: "", password: "" });
+        }}
+        onConfirm={handleEditEmployee}
+        onChange={setEditField}
       />
     </div>
   );

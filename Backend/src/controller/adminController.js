@@ -40,7 +40,7 @@ export async function login(req, res) {
       employeeNo: admin.EmployeeNo,
       firstName: admin.FirstName,
       lastName: admin.LastName,
-      officeCode: admin.Office?.code || null,
+      officeCode: admin.SameDeptCode || null,
     };
 
     const token = jwt.sign(

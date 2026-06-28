@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 
 export default function EmployeeCombobox({
-  options,        // [{ value, label, raw }]
-  value,          // currently selected value (EmployeeId string)
-  onChange,       // (e) => void  — emits a synthetic { target: { value } }
+  options,
+  value,
+  onChange,
   disabled,
   placeholder = "Search employee...",
 }) {
@@ -11,26 +11,19 @@ export default function EmployeeCombobox({
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
-  // When the parent sets a value (e.g. on edit load), sync the display label
-  const selectedLabel = useMemo(() => {
-    const match = options.find((o) => o.value === value);
-    return match ? match.label : "";
-  }, [value, options]);
+  const selectedLabel = useMemo(
+    () => options.find((o) => o.value === value)?.label ?? "",
+    [value, options]
+  );
 
-  // Keep input text in sync when selected value changes externally
-  useEffect(() => {
-    setQuery(selectedLabel);
-  }, [selectedLabel]);
+  useEffect(() => { setQuery(selectedLabel); }, [selectedLabel]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return options.slice(0, 50); // cap for perf
+    if (!query.trim()) return options.slice(0, 50);
     const q = query.toLowerCase();
-    return options
-      .filter((o) => o.label.toLowerCase().includes(q))
-      .slice(0, 50);
+    return options.filter((o) => o.label.toLowerCase().includes(q)).slice(0, 50);
   }, [query, options]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => {
       if (!containerRef.current?.contains(e.target)) setOpen(false);
@@ -48,40 +41,44 @@ export default function EmployeeCombobox({
   const handleInputChange = (e) => {
     setQuery(e.target.value);
     setOpen(true);
-    // If user clears the field, also clear the selection
     if (!e.target.value) onChange({ target: { value: "" } });
   };
-
-  const handleFocus = () => setOpen(true);
 
   return (
     <div ref={containerRef} className="relative">
       <input
         type="text"
-        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        autoComplete="off"
         placeholder={placeholder}
         value={query}
         onChange={handleInputChange}
-        onFocus={handleFocus}
+        onFocus={() => setOpen(true)}
         disabled={disabled}
-        autoComplete="off"
+        className={[
+          "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm",
+          "placeholder:text-slate-400 outline-none transition duration-150",
+          "border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100",
+          "disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500",
+        ].join(" ")}
       />
+
       {open && filtered.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg text-sm">
+        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg text-sm">
           {filtered.map((option) => (
             <li
               key={option.value}
-              className="px-3 py-2 cursor-pointer hover:bg-blue-50"
-              onMouseDown={() => handleSelect(option)}  // mousedown fires before blur
+              onMouseDown={() => handleSelect(option)}
+              className="cursor-pointer px-3.5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700"
             >
               {option.label}
             </li>
           ))}
         </ul>
       )}
+
       {open && filtered.length === 0 && query.trim() && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg text-sm px-3 py-2 text-gray-400">
-          No employees found
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-400 shadow-lg">
+          No employees found.
         </div>
       )}
     </div>

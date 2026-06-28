@@ -128,3 +128,73 @@ export async function createEmployeeAccount(data) {
     },
   };
 }
+
+export async function createFullEmployee({ email, password, SameDeptCode }) {
+  // Check email not already taken in CPTUsers
+  const existingUser = await User.findOne({ where: { email } });
+  if (existingUser) return { error: "Email is already in use" };
+
+  // Generate next EmployeeNo automatically
+  const last = await Employees.findOne({
+    order: [["EmployeeId", "DESC"]],
+  });
+
+  // Simple increment — adjust prefix to match your format e.g. EMP001
+  const lastNo = last?.EmployeeNo?.replace(/\D/g, "") ?? "0";
+  const nextNo = "EMP" + String(parseInt(lastNo) + 1).padStart(3, "0");
+
+  // Create the Employee record
+  const employee = await Employees.create({
+    EmployeeNo: nextNo,
+    Email: email,
+    SameDeptCode: SameDeptCode,
+  });
+
+  // Create the CPTUsers login account
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await User.create({
+    email: String(email).trim(),
+    password: hashedPassword,
+    EmployeeNo: employee.EmployeeNo,
+    SameDeptCode: SameDeptCode,
+    role_id: ROLES.EMPLOYEE,
+  });
+
+  return {
+    data: {
+      employee,
+      user: { user_id: user.user_id, email: user.email },
+    },
+  };
+}
+
+export async function updateEmployeeAccount({ EmployeeNo, email, password }) {
+  const user = await User.findOne({ where: { EmployeeNo } });
+  if (!user) return { error: "Account not found" };
+
+  // Check email not taken by someone else
+  if (email && email !== user.email) {
+    const taken = await User.findOne({ where: { email } });
+    if (taken) return { error: "Email is already in use" };
+    user.email = email.trim();
+  }
+
+  if (password) {
+    user.password = await bcrypt.hash(password, 10);
+  }
+
+  await user.save();
+  return { data: { user_id: user.user_id, email: user.email, EmployeeNo } };
+}
+export async function deleteFullEmployee(EmployeeNo) {
+  const employee = await Employees.findOne({ where: { EmployeeNo } });
+  if (!employee) return { error: "Employee not found" };
+
+  // Delete CPTUsers account if exists
+  await User.destroy({ where: { EmployeeNo } });
+
+  // Delete Employee record
+  await employee.destroy();
+
+  return { success: true };
+}

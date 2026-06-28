@@ -1,5 +1,6 @@
 import Modal from "../ui/Modal";
 import Input from "../ui/Input";
+import Select from "../ui/Select";
 
 export default function OfficeFormModal({
   open,
@@ -12,6 +13,7 @@ export default function OfficeFormModal({
   onChange,
 }) {
   const isCreate = mode === "create";
+  const busy = isCreate ? creating : updating;
 
   return (
     <Modal
@@ -19,15 +21,9 @@ export default function OfficeFormModal({
       title={isCreate ? "Create Office" : "Edit Office"}
       onClose={onClose}
       onConfirm={onConfirm}
-      confirmText={
-        isCreate
-          ? creating
-            ? "Creating..."
-            : "Create"
-          : updating
-          ? "Saving..."
-          : "Save Changes"
-      }
+      confirmText={isCreate ? "Create Office" : "Save Changes"}
+      confirmVariant="primary"
+      disabled={busy}
     >
       <div className="space-y-4">
         <Input
@@ -35,28 +31,24 @@ export default function OfficeFormModal({
           value={form.code}
           onChange={onChange("code")}
           placeholder="e.g. ICTO"
+          hint="Short identifier used across the system. Will be uppercased automatically."
+          required
         />
-
         <Input
           label="Office Name"
           value={form.name}
           onChange={onChange("name")}
           placeholder="e.g. Information and Communications Technology Office"
+          required
         />
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Status
-          </label>
-          <select
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400"
-            value={form.status}
-            onChange={onChange("status")}
-          >
-            <option value="active">active</option>
-            <option value="inactive">inactive</option>
-          </select>
-        </div>
+        <Select
+          label="Status"
+          value={form.status}
+          onChange={onChange("status")}
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </Select>
       </div>
     </Modal>
   );

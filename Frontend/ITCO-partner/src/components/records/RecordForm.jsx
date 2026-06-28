@@ -1,7 +1,7 @@
 import Input from "../ui/Input";
 import Textarea from "../ui/TextArea";
 import Button from "../ui/Button";
-import EmployeeCombobox from "./EmployeeCombobox";  // removed unused EmployeeSelectField
+import EmployeeCombobox from "./EmployeeCombobox";
 
 export default function RecordForm({
   form,
@@ -16,23 +16,18 @@ export default function RecordForm({
   onCancel,
 }) {
   return (
-    <form
-      onSubmit={onSubmit}
-      className="rounded-2xl border bg-white p-5 shadow-sm"
-    >
+    <form onSubmit={onSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="grid gap-4 md:grid-cols-2">
         <Input
           label="Article"
           value={form.article ?? ""}
           onChange={onFieldChange("article")}
         />
-
         <Input
           label="Prop No."
           value={form.propNumber ?? ""}
           onChange={onFieldChange("propNumber")}
         />
-
         <Input
           label="Date Acquired"
           type="date"
@@ -40,19 +35,16 @@ export default function RecordForm({
           onChange={onFieldChange("dateAcquired")}
         />
 
-        {/* Wrapped to match the label pattern of other fields */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Employee</label>
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+            Employee
+          </label>
           <EmployeeCombobox
             options={employeeOptions}
             value={selectedEmployeeId}
             onChange={onEmployeeChange}
             disabled={loadingEmployees}
-            placeholder={
-              loadingEmployees
-                ? "Loading employees..."
-                : "Search by name, employee no, or dept..."
-            }
+            placeholder={loadingEmployees ? "Loading employees..." : "Search by name or employee no..."}
           />
         </div>
 
@@ -60,41 +52,37 @@ export default function RecordForm({
           label="Accountable Officer"
           value={form.accountableOfficer ?? ""}
           readOnly
+          hint="Auto-filled from selected employee"
         />
-
         <Input
           label="Office"
           value={form.office ?? ""}
           readOnly
+          hint="Auto-filled from selected employee"
         />
-
         <Input
           label="Unit"
           value={form.unit ?? ""}
           onChange={onFieldChange("unit")}
         />
-
         <Input
           label="Unit Value"
           type="number"
           value={form.unitValue ?? ""}
           onChange={onFieldChange("unitValue")}
         />
-
         <Input
           label="Bal. Qty (per Stockcard)"
           type="number"
           value={form.balQty ?? ""}
           onChange={onFieldChange("balQty")}
         />
-
         <Input
           label="Bal. Value (per Stockcard)"
           type="number"
           value={form.balValue ?? ""}
           onChange={onFieldChange("balValue")}
         />
-
         <Input
           label="ARE No. / ME No."
           value={form.areMeNo ?? ""}
@@ -111,17 +99,10 @@ export default function RecordForm({
         </div>
       </div>
 
-      <div className="mt-5 flex gap-2">
-        <Button type="submit" disabled={loading}>
-          {loading
-            ? editMode
-              ? "Updating..."
-              : "Submitting..."
-            : editMode
-            ? "Update"
-            : "Submit"}
+      <div className="mt-5 flex gap-2 border-t border-slate-100 pt-5">
+        <Button type="submit" loading={loading}>
+          {editMode ? "Update Record" : "Submit Record"}
         </Button>
-
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>

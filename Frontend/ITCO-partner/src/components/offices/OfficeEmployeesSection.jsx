@@ -1,20 +1,6 @@
 import { useMemo, useState } from "react";
 import Button from "../ui/Button";
 
-function EmployeeAccountBadge({ hasAccount }) {
-  return (
-    <span
-      className={[
-        "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold",
-        hasAccount
-          ? "bg-green-50 text-green-700 ring-1 ring-green-200"
-          : "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-      ].join(" ")}
-    >
-      {hasAccount ? "Has Account" : "No Account"}
-    </span>
-  );
-}
 
 function Initials({ name }) {
   const parts = name?.trim().split(" ") ?? [];
@@ -22,7 +8,6 @@ function Initials({ name }) {
     parts.length >= 2
       ? `${parts[0][0]}${parts[parts.length - 1][0]}`
       : parts[0]?.[0] ?? "?";
-
   return (
     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 uppercase">
       {letters}
@@ -32,7 +17,13 @@ function Initials({ name }) {
 
 const PAGE_SIZE = 5;
 
-export default function OfficeEmployeesSection({ employees = [], onCreateAccount }) {
+export default function OfficeEmployeesSection({
+  employees = [],
+  onCreateEmployee,
+  onEditEmployee,
+  onDeleteEmployee,   
+  deletingEmployee,
+}) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
@@ -57,38 +48,31 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
 
   const goTo = (n) => setPage(Math.min(Math.max(1, n), totalPages));
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-    setPage(1);
-  };
-
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* HEADER */}
       <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-sm font-semibold text-slate-900">
-            Employees
-          </div>
+          <div className="text-sm font-semibold text-slate-900">Employees</div>
           <div className="mt-0.5 text-xs text-slate-500">
             {employees.length} employee(s) assigned
           </div>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search employee..."
-          value={search}
-          onChange={handleSearch}
-          className="
-            w-full sm:w-56
-            rounded-xl border border-slate-300
-            bg-white px-3 py-2 text-sm
-            text-slate-700 placeholder:text-slate-400
-            outline-none transition
-            focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-          "
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search employee..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full sm:w-48 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+
+          {/* ✅ Create Employee button */}
+          <Button size="sm" type="button" onClick={onCreateEmployee}>
+            + Create Employee
+          </Button>
+        </div>
       </div>
 
       {/* BODY */}
@@ -100,10 +84,7 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
         ) : (
           <div className="space-y-3">
             {paginated.map((emp) => {
-              const fullName = [emp.FirstName, emp.LastName]
-                .filter(Boolean)
-                .join(" ");
-
+              const fullName = [emp.FirstName, emp.LastName].filter(Boolean).join(" ");
               return (
                 <div
                   key={emp.EmployeeNo}
@@ -115,12 +96,10 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
                     <div className="text-sm font-semibold text-slate-900">
                       {fullName || "-"}
                     </div>
-
                     <div className="mt-0.5 text-xs text-slate-500">
                       {emp.EmployeeNo}
                       {emp.Email ? ` · ${emp.Email}` : ""}
                     </div>
-
                     {emp.account?.email && (
                       <div className="mt-0.5 text-xs text-blue-600">
                         {emp.account.email}
@@ -128,32 +107,39 @@ export default function OfficeEmployeesSection({ employees = [], onCreateAccount
                     )}
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
-                    <EmployeeAccountBadge hasAccount={emp.hasAccount} />
+                 <div className="flex flex-col items-end gap-2">
+  <div className="flex gap-2">
+    <Button
+      size="sm"
+      variant="outline"
+      type="button"
+      onClick={() => onEditEmployee?.(emp)}
+    >
+      Edit
+    </Button>
 
-                    {!emp.hasAccount && (
-                      <Button
-                        size="sm"
-                        type="button"
-                        onClick={() => onCreateAccount?.(emp)}
-                      >
-                        Create Account
-                      </Button>
-                    )}
-                  </div>
+    <Button
+      size="sm"
+      variant="danger"
+      type="button"
+      disabled={deletingEmployee === emp.EmployeeNo}
+      onClick={() => onDeleteEmployee?.(emp)}
+    >
+      {deletingEmployee === emp.EmployeeNo ? "Deleting..." : "Delete"}
+    </Button>
+  </div>
+</div>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* PAGINATION */}
         {filtered.length > PAGE_SIZE && (
           <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
             <span className="text-xs text-slate-500">
               Page {safePage} of {totalPages}
             </span>
-
             <div className="flex gap-1">
               {[["First", 1], ["Prev", safePage - 1], ["Next", safePage + 1], ["Last", totalPages]].map(
                 ([label, target]) => (

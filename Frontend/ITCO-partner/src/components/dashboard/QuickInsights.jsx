@@ -1,3 +1,5 @@
+import StatCard from "./StatCard";
+
 export default function QuickInsights({
   loading,
   isSuperAdmin,
@@ -6,44 +8,77 @@ export default function QuickInsights({
   totalValue,
   totalAdmins,
   totalEmployees,
+  totalQty,
+  totalOffices,
 }) {
+  if (loading) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-28 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isSuperAdmin) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Total Records"
+          value={totalRecords.toLocaleString()}
+          hint={`${totalOffices} office(s)`}
+          icon="records"
+          color="navy"
+        />
+        <StatCard
+          label="Total Quantity"
+          value={totalQty.toLocaleString()}
+          hint="items on stockcard"
+          icon="qty"
+          color="blue"
+        />
+        <StatCard
+          label="Total Admins"
+          value={totalAdmins.toLocaleString()}
+          hint="active accounts"
+          icon="admins"
+          color="gold"
+        />
+        <StatCard
+          label="Total Employees"
+          value={totalEmployees.toLocaleString()}
+          hint="active employees"
+          icon="employees"
+          color="green"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-sm font-semibold text-slate-900">Quick Insight</div>
-        <div className="mt-3 text-sm text-slate-600">
-          {loading
-            ? "Loading summary..."
-            : isSuperAdmin
-            ? `Top office right now is ${topOffice}.`
-            : `You currently have ${totalRecords} record(s) visible in your office scope.`}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="text-sm font-semibold text-slate-900">Record Value</div>
-        <div className="mt-3 text-sm text-slate-600">
-          {loading ? "Loading summary..." : `Estimated visible value: ${totalValue.toLocaleString()}`}
-        </div>
-      </div>
-
-      {isSuperAdmin && (
-        <>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">Admin Coverage</div>
-            <div className="mt-3 text-sm text-slate-600">
-              {loading ? "Loading summary..." : `${totalAdmins} admin account(s) are currently in the system.`}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">Employee Coverage</div>
-            <div className="mt-3 text-sm text-slate-600">
-              {loading ? "Loading summary..." : `${totalEmployees} active employee(s) are currently available.`}
-            </div>
-          </div>
-        </>
-      )}
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <StatCard
+        label="Total Records"
+        value={totalRecords.toLocaleString()}
+        hint="in your office scope"
+        icon="records"
+        color="navy"
+      />
+      <StatCard
+        label="Total Quantity"
+        value={totalQty.toLocaleString()}
+        hint="items on stockcard"
+        icon="qty"
+        color="blue"
+      />
+      <StatCard
+        label="Est. Total Value"
+        value={`₱${totalValue.toLocaleString()}`}
+        hint="based on unit value × qty"
+        icon="value"
+        color="gold"
+      />
     </div>
   );
 }

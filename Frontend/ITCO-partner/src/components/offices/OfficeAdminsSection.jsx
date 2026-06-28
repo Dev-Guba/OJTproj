@@ -57,25 +57,19 @@ export default function OfficeAdminsSection({ admins = [] }) {
       ) : (
         <div className="space-y-2">
           {admins.map((admin) => {
-            const fullName = [admin.Employee?.FirstName, admin.Employee?.LastName]
-              .filter(Boolean)
-              .join(" ");
+            const fullName = [admin.FirstName, admin.LastName].filter(Boolean).join(" ");
             return (
               <div
-                key={admin.user_id}
+                key={admin.EmployeeId}
                 className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
               >
-                <Initials name={fullName || admin.email} />
+                <Initials name={fullName || admin.Email} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-slate-900">
-                    {admin.email}
+                    {fullName || admin.Email}
                   </div>
                   <div className="mt-0.5 text-xs text-slate-400">
-                    {fullName
-                      ? `${fullName} · ${admin.EmployeeNo}`
-                      : admin.EmployeeNo
-                      ? `Employee No: ${admin.EmployeeNo}`
-                      : "No linked employee"}
+                    {admin.EmployeeNo ? `${admin.EmployeeNo} · ${admin.Email}` : admin.Email}
                   </div>
                 </div>
                 <AdminRoleBadge roleId={admin.role_id} />
