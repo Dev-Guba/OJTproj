@@ -1,5 +1,5 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
@@ -15,7 +15,6 @@ import recordRoutes from "./src/routes/recordRoute.js";
 
 import "./src/models/index.js";
 
-dotenv.config();  
 
 const app = express();
 

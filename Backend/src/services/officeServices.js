@@ -67,7 +67,6 @@ export async function getOfficeDetails(officeId) {
   const office = await Office.findByPk(officeId);
   if (!office) return null;
 
-  // Admins = employees with admin role_id in this office
   const admins = await Employee.findAll({
     where: {
       SameDeptCode: office.code,
@@ -78,7 +77,6 @@ export async function getOfficeDetails(officeId) {
     raw: true,
   });
 
-  // Employees = active employees in this office
   const employees = await Employee.findAll({
     where: {
       SameDeptCode: office.code,
@@ -90,14 +88,26 @@ export async function getOfficeDetails(officeId) {
     raw: true,
   });
 
-  const employeesWithAccountStatus = employees.map((emp) => ({
-    ...emp,
-    hasAccount: !!emp.Email && !!emp.Password, // or whatever signals an account exists
-  }));
+  // Accounts live in the User table, linked by EmployeeNo — not on the Employee row itself
+  const employeeNos = employees.map((e) => e.EmployeeNo).filter(Boolean);
 
-  return {
-    office,
-    admins,
-    employees: employeesWithAccountStatus,
-  };
+  // AFTER
+const accounts = employeeNos.length
+  ? await User.findAll({
+      where: { EmployeeNo: { [Op.in]: employeeNos } },
+    })
+  : [];
+
+  const accountByEmployeeNo = new Map(accounts.map((a) => [a.EmployeeNo, a]));
+
+  const employeesWithAccountStatus = employees.map((emp) => {
+    const account = accountByEmployeeNo.get(emp.EmployeeNo);
+    return {
+      ...emp,
+      hasAccount: !!account,
+      account: account ? { email: account.email } : null,
+    };
+  });
+
+  return { office, admins, employees: employeesWithAccountStatus };
 }
