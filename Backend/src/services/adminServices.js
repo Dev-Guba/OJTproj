@@ -126,6 +126,11 @@ export async function getAdmins(filters = {}) {
   });
 }
 
+
+function generateAdminEmployeeNo() {
+  const rand = Math.floor(10 + Math.random() * 90);
+  return `ADM-${Date.now()}${rand}`;
+}
 /**
  * =====================================
  * CREATE ADMIN
@@ -141,6 +146,7 @@ export async function createAdminUser({ email, password, SameDeptCode }) {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   return await Employee.create({
+    EmployeeNo: generateAdminEmployeeNo(),
     Email: email,
     Password: hashedPassword,
     SameDeptCode,
@@ -242,4 +248,9 @@ export async function createUserByAdmin(currentUser, data) {
   });
 
   return newUser;
+}
+
+export async function findOfficeByCode(code) {
+  if (!code) return null;
+  return await Office.findOne({ where: { code } });
 }

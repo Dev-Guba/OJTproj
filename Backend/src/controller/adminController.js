@@ -8,6 +8,7 @@ import {
   deleteAdminUser,
   findAdminById,
   createAdminUser,
+  findOfficeByCode,
 } from "../services/adminServices.js";
 
 import { ROLES } from "../constants/roles.js";
@@ -32,6 +33,16 @@ export async function login(req, res) {
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (admin.role_id === ROLES.ADMIN) {
+      const office = await findOfficeByCode(admin.SameDeptCode);
+
+      if (!office || office.status !== "active") {
+        return res.status(403).json({
+          message: "Your office is currently inactive. Please contact the system administrator.",
+        });
+      }
     }
 
     const payload = {

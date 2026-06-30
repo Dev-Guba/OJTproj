@@ -129,12 +129,142 @@ export async function createEmployeeAccount(data) {
   };
 }
 
+function generateEmployeeNo() {
+  const rand = Math.floor(10 + Math.random() * 90);
+  return `EMP-${Date.now()}${rand}`;
+}
+
+export async function createEmployeeRecord({
+  email,
+  password,
+  firstName,
+  lastName,
+  callerRole,
+  callerDeptCode,
+  targetDeptCode,
+}) {
+  const SameDeptCode =
+    callerRole === ROLES.ADMIN ? callerDeptCode : targetDeptCode || callerDeptCode;
+
+  if (!SameDeptCode) {
+    return { error: "Office is required" };
+  }
+
+  const existing = await Employees.findOne({ where: { Email: email } });
+  if (existing) {
+    return { error: "Email is already in use" };
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const created = await Employees.create({
+    EmployeeNo: generateEmployeeNo(),
+    Email: String(email).trim(),
+    Password: hashedPassword,
+    FirstName: firstName ? String(firstName).trim() : null,
+    LastName: lastName ? String(lastName).trim() : null,
+    SameDeptCode,
+    role_id: ROLES.EMPLOYEE,
+  });
+
+  return {
+    data: {
+      EmployeeNo: created.EmployeeNo,
+      Email: created.Email,
+      FirstName: created.FirstName,
+      LastName: created.LastName,
+      SameDeptCode: created.SameDeptCode,
+      role_id: created.role_id,
+    },
+  };
+}
+
+export async function updateEmployeeAccountByNo(EmployeeNo, data, { callerRole, callerDeptCode }) {
+  const employee = await Employees.findOne({ where: { EmployeeNo } });
+
+  if (!employee) {
+    return { error: "Employee not found" };
+  }
+
+  if (employee.role_id === ROLES.ADMIN || employee.role_id === ROLES.SUPER_ADMIN) {
+    return { error: "Use Admin Management to manage admin accounts" };
+  }
+
+  if (callerRole === ROLES.ADMIN && employee.SameDeptCode !== callerDeptCode) {
+    return { error: "You can only manage employees in your own office" };
+  }
+
+  const linkedUser = await User.findOne({ where: { EmployeeNo } });
+
+  if (data.email) {
+    const emailTaken = linkedUser
+      ? await User.findOne({ where: { email: data.email, EmployeeNo: { [Op.ne]: EmployeeNo } } })
+      : await Employees.findOne({ where: { Email: data.email, EmployeeNo: { [Op.ne]: EmployeeNo } } });
+
+    if (emailTaken) {
+      return { error: "Email is already in use" };
+    }
+  }
+
+  // Name always lives on the Employee record, regardless of where credentials live
+  const namePayload = {};
+  if (data.firstName) namePayload.FirstName = String(data.firstName).trim();
+  if (data.lastName) namePayload.LastName = String(data.lastName).trim();
+  if (Object.keys(namePayload).length) {
+    await employee.update(namePayload);
+  }
+
+  if (linkedUser) {
+    const payload = {};
+    if (data.email) payload.email = String(data.email).trim();
+    if (data.password) payload.password = await bcrypt.hash(data.password, 10);
+    if (Object.keys(payload).length) await linkedUser.update(payload);
+  } else {
+    const payload = {};
+    if (data.email) payload.Email = String(data.email).trim();
+    if (data.password) payload.Password = await bcrypt.hash(data.password, 10);
+    if (Object.keys(payload).length) await employee.update(payload);
+  }
+
+  return { data: { EmployeeNo } };
+}
+
+export async function deleteEmployeeRecord(EmployeeNo, { callerRole, callerDeptCode }) {
+  const employee = await Employees.findOne({ where: { EmployeeNo } });
+
+  if (!employee) {
+    return { error: "Employee not found" };
+  }
+
+  if (employee.role_id === ROLES.ADMIN || employee.role_id === ROLES.SUPER_ADMIN) {
+    return { error: "Use Admin Management to manage admin accounts" };
+  }
+
+  if (callerRole === ROLES.ADMIN && employee.SameDeptCode !== callerDeptCode) {
+    return { error: "You can only manage employees in your own office" };
+  }
+
+  const linkedUser = await User.findOne({ where: { EmployeeNo } });
+  if (linkedUser) {
+    await linkedUser.destroy();
+  }
+
+  const isSynthetic = String(EmployeeNo).startsWith("EMP-");
+
+  if (isSynthetic) {
+    await employee.destroy();
+    return { data: { EmployeeNo, removed: "full" } };
+  }
+
+  return { data: { EmployeeNo, removed: "account-only" } };
+}
+
 export async function createFullEmployee({ email, password, SameDeptCode }) {
   // Check email not already taken in CPTUsers
   const existingUser = await User.findOne({ where: { email } });
   if (existingUser) return { error: "Email is already in use" };
 
-  // Generate next EmployeeNo automatically
+  
   const last = await Employees.findOne({
     order: [["EmployeeId", "DESC"]],
   });

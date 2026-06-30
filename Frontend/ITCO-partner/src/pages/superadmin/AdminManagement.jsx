@@ -63,33 +63,43 @@ export default function AdminManagement() {
   const officeOptions = useMemo(() => ["All", ...officeList], [officeList]);
 
   const handleCreateAdmin = async () => {
-    try {
-      if (!form.email || !form.password || !form.SameDeptCode) {
-        toast.error("Please fill in all fields.");
-        return;
-      }
-      setCreating(true);
-      await Api.createAdmin({
-        email: form.email.trim(),
-        password: form.password,
-        SameDeptCode: form.SameDeptCode.trim(),
-      });
-      toast.success("Admin created successfully.");
-      setOpenCreate(false);
-      resetForm();
-      await loadAdmins();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create admin.");
-    } finally {
-      setCreating(false);
+  try {
+    if (!form.email || !form.password || !form.SameDeptCode) {
+      toast.error("Please fill in all fields.");
+      return;
     }
-  };
+
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
+    setCreating(true);
+    await Api.createAdmin({
+      email: form.email.trim(),
+      password: form.password,
+      SameDeptCode: form.SameDeptCode.trim(),
+    });
+    toast.success("Admin created successfully.");
+    setOpenCreate(false);
+    resetForm();
+    await loadAdmins();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to create admin.");
+  } finally {
+    setCreating(false);
+  }
+};
 
   const handleOpenEdit = (admin) => {
-    setSelectedAdmin(admin);
-    setForm({ email: admin.email ?? "", password: "", SameDeptCode: admin.SameDeptCode ?? "" });
-    setOpenEdit(true);
-  };
+  setSelectedAdmin(admin);
+  setForm({
+    email: admin.Email ?? "",
+    password: "",
+    SameDeptCode: admin.SameDeptCode ?? "",
+  });
+  setOpenEdit(true);
+};
 
   const handleUpdateAdmin = async () => {
     try {
@@ -114,18 +124,18 @@ export default function AdminManagement() {
   };
 
   const handleDeleteAdmin = async (admin) => {
-    if (!window.confirm(`Delete admin "${admin.email}"?`)) return;
-    try {
-      setDeletingId(admin.EmployeeId);
-      await Api.deleteAdmin(admin.EmployeeId);
-      toast.success("Admin deleted successfully.");
-      await loadAdmins();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to delete admin.");
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  if (!window.confirm(`Delete admin "${admin.Email}"?`)) return;
+  try {
+    setDeletingId(admin.EmployeeId);
+    await Api.deleteAdmin(admin.EmployeeId);
+    toast.success("Admin deleted successfully.");
+    await loadAdmins();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to delete admin.");
+  } finally {
+    setDeletingId(null);
+  }
+};
 
   useEffect(() => {
     if (isSuperAdmin) { loadAdmins(); loadOffices(); }

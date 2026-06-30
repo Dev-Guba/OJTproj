@@ -15,6 +15,7 @@ export default function Modal({
   const panelRef = useRef(null);
   const titleId = useId();
 
+  // Focus + scroll lock — only on actual open/close, never on every re-render
   useEffect(() => {
     if (!open) return;
 
@@ -22,16 +23,21 @@ export default function Modal({
     panelRef.current?.focus();
     document.body.style.overflow = "hidden";
 
+    return () => {
+      document.body.style.overflow = "";
+      previouslyFocused?.focus?.();
+    };
+  }, [open]);
+
+  // Escape-to-close — safe to re-attach every render, doesn't touch focus
+  useEffect(() => {
+    if (!open) return;
+
     const onKeyDown = (e) => {
       if (e.key === "Escape" && !disabled) onClose?.();
     };
     document.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = "";
-      document.removeEventListener("keydown", onKeyDown);
-      previouslyFocused?.focus?.();
-    };
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, disabled, onClose]);
 
   if (!open) return null;
