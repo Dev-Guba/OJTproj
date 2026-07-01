@@ -175,7 +175,7 @@ export default function Sidebar({ open = false, onClose }) {
                   manageActive ? "bg-white/15 text-white" : "bg-white/10 text-white/90",
                 ].join(" ")}
               >
-                <IconMenu className="h-[18px] w-4.5" />
+                <IconMenu className="h-4.5 w-4.5" />
               </span>
 
               <span className="flex-1 font-medium">Manage Records</span>
@@ -198,7 +198,7 @@ export default function Sidebar({ open = false, onClose }) {
               <NavItem
                 to="/dashboard/admins"
                 label="Admin Management"
-                icon={<IconUsers className="h-[18px] w-[18px]" />}
+                icon={<IconUsers className="h-4.5 w-4.5" />}
                 onClick={closeMobile}
               />
             )}
@@ -207,7 +207,7 @@ export default function Sidebar({ open = false, onClose }) {
               <NavItem
                 to="/dashboard/offices"
                 label="Office Management"
-                icon={<IconBuilding className="h-[18px] w-[18px]" />}
+                icon={<IconBuilding className="h-4.5 w-4.5" />}
                 onClick={closeMobile}
               />
             )}
@@ -216,7 +216,7 @@ export default function Sidebar({ open = false, onClose }) {
               <NavItem
                 to="/dashboard/offices/me"
                 label="My Office"
-                icon={<IconBuilding className="h-[18px] w-[18px]" />}
+                icon={<IconBuilding className="h-4.5 w-4.5" />}
                 onClick={closeMobile}
               />
             )}
@@ -224,7 +224,7 @@ export default function Sidebar({ open = false, onClose }) {
             <NavItem
               to="/dashboard/settings"
               label="Settings"
-              icon={<IconSettings className="h-[18px] w-[18px]" />}
+              icon={<IconSettings className="h-4.5 w-4.5" />}
               onClick={closeMobile}
             />
           </div>

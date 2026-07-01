@@ -14,11 +14,6 @@ import {
 import { ROLES } from "../constants/roles.js";
 import { createUserByAdmin } from "../services/adminServices.js";
 
-/**
- * ================================
- * LOGIN
- * ================================
- */
 export async function login(req, res) {
   try {
     const { email, password } = req.body;
@@ -78,25 +73,13 @@ export async function login(req, res) {
   }
 }
 
-/**
- * ================================
- * ROLE GUARD (helper inside file)
- * ================================
- */
 function isSuperAdmin(req) {
   return req.user?.role_id === 1; // Assuming 1 is SUPER_ADMIN
 }
 
-/**
- * ================================
- * GET ADMINS
- * ================================
- */
 export async function HandlegetAdmins(req, res) {
   try {
-    // if (!isSuperAdmin(req)) {
-    //   return res.status(403).json({ message: "Forbidden" });
-    // }
+
 
     const admins = await getAdmins({
       search: req.query.search || "",
@@ -117,20 +100,20 @@ export async function HandlegetAdmins(req, res) {
   }
 }
 
-/**
- * ================================
- * CREATE ADMIN
- * ================================
- */
 export async function HandleCreateAdmin(req, res) {
   try {
     if (!isSuperAdmin(req)) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    
+    const { employeeNo, email, password, SameDeptCode, firstName, lastName } = req.body;
 
-    const { email, password, SameDeptCode } = req.body;
+    if (!employeeNo || !firstName || !lastName) {
+      return res.status(400).json({
+        success: false,
+        message: "Employee number, first name, and last name are required",
+      });
+    }
 
     if (!SameDeptCode) {
       return res.status(400).json({
@@ -140,9 +123,12 @@ export async function HandleCreateAdmin(req, res) {
     }
 
     const newAdmin = await createAdminUser({
+      employeeNo,
       email,
       password,
       SameDeptCode,
+      firstName,
+      lastName,
     });
 
     if (!newAdmin) {
@@ -166,11 +152,6 @@ export async function HandleCreateAdmin(req, res) {
   }
 }
 
-/**
- * ================================
- * UPDATE ADMIN
- * ================================
- */
 export async function HandleUpdateAdmin(req, res) {
   try {
     if (!isSuperAdmin(req)) {
@@ -178,6 +159,13 @@ export async function HandleUpdateAdmin(req, res) {
     }
 
     const userId = Number(req.params.id);
+
+    if (!Number.isInteger(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid admin id",
+      });
+    }
 
     const existing = await findAdminById(userId);
 
@@ -204,11 +192,6 @@ export async function HandleUpdateAdmin(req, res) {
   }
 }
 
-/**
- * ================================
- * DELETE ADMIN
- * ================================
- */
 export async function HandleDeleteAdmin(req, res) {
   try {
     if (!isSuperAdmin(req)) {
