@@ -94,7 +94,7 @@ export async function getOfficeDetails(officeId) {
   const employeeNos = employees.map((e) => e.EmployeeNo).filter(Boolean);
 
   const accounts = employeeNos.length
-    ? await User.findAll({
+    ? await Employee.findAll({
         where: { EmployeeNo: { [Op.in]: employeeNos } },
         attributes: ["EmployeeNo", "email"],
         raw: true,

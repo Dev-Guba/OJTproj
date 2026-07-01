@@ -22,7 +22,13 @@ export default function CreateEmployeeModal({
         <p className="text-sm text-slate-500">
           A new employee record and login account will be created for your office.
         </p>
-
+          <Input
+            label="Employee Number"
+            value={form.EmployeeNo}
+            onChange={onChange("EmployeeNo")}
+            placeholder="EMP-001"
+            required
+          />
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="First Name"

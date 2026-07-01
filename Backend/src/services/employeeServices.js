@@ -92,7 +92,7 @@ export async function createEmployeeAccount(data) {
     error: "You can only create accounts for employees in your office",
   };
 }
-  const existingByEmployee = await User.findOne({
+  const existingByEmployee = await Employees.findOne({
     where: { EmployeeNo },
   });
 
@@ -100,8 +100,8 @@ export async function createEmployeeAccount(data) {
     return { error: "This employee already has an account" };
   }
 
-  const existingByEmail = await User.findOne({
-    where: { email },
+  const existingByEmail = await Employees.findOne({
+    where: { Email: email },
   });
 
   if (existingByEmail) {
@@ -110,7 +110,7 @@ export async function createEmployeeAccount(data) {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const created = await User.create({
+  const created = await Employees.create({
     email: String(email).trim(),
     password: hashedPassword,
     EmployeeNo: employee.EmployeeNo,
@@ -120,7 +120,7 @@ export async function createEmployeeAccount(data) {
 
   return {
     data: {
-      user_id: created.user_id,
+      employee_no: created.EmployeeNo,
       email: created.email,
       EmployeeNo: created.EmployeeNo,
       SameDeptCode: created.SameDeptCode,
@@ -129,12 +129,13 @@ export async function createEmployeeAccount(data) {
   };
 }
 
-function generateEmployeeNo() {
-  const rand = Math.floor(10 + Math.random() * 90);
-  return `EMP-${Date.now()}${rand}`;
-}
+// function generateEmployeeNo() {
+//   const rand = Math.floor(10 + Math.random() * 90);
+//   return `EMP-${Date.now()}${rand}`;
+// }
 
 export async function createEmployeeRecord({
+  EmployeeNo,
   email,
   password,
   firstName,
@@ -158,7 +159,7 @@ export async function createEmployeeRecord({
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const created = await Employees.create({
-    EmployeeNo: generateEmployeeNo(),
+    EmployeeNo: EmployeeNo,
     Email: String(email).trim(),
     Password: hashedPassword,
     FirstName: firstName ? String(firstName).trim() : null,

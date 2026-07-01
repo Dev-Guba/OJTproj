@@ -19,23 +19,30 @@ function toDataUriPng(absPath) {
   }
 }
 
-function getEmployeeFullName(user) {
-  const firstName =
-    user?.firstName ??
-    user?.FirstName ??
-    user?.Employee?.FirstName ??
-    "";
+// Resolve the numeric Employee PK (EmployeeId) from the logged-in user.
+// Records are linked via Record.employee_id -> Employee.EmployeeId, but
+// the auth/session object generally only carries the business code
+// (EmployeeNo, e.g. "EMP001"). This bridges the two.
+async function resolveEmployeeId(user) {
+  if (user.EmployeeId) return user.EmployeeId;
 
-  const lastName =
-    user?.lastName ??
-    user?.LastName ??
-    user?.Employee?.LastName ??
-    "";
+  if (!user.EmployeeNo) {
+    throw new Error("User has no linked EmployeeNo.");
+  }
 
-  return [firstName, lastName].filter(Boolean).join(" ").trim();
+  const employee = await Employee.findOne({
+    where: { EmployeeNo: user.EmployeeNo },
+    attributes: ["EmployeeId"],
+  });
+
+  if (!employee) {
+    throw new Error("Linked employee record not found.");
+  }
+
+  return employee.EmployeeId;
 }
 
-function buildRecordScopeWhere(user) {
+async function buildRecordScopeWhere(user) {
   if (!user) throw new Error("Authenticated user not found.");
 
   switch (user.role_id) {
@@ -47,10 +54,10 @@ function buildRecordScopeWhere(user) {
       // Otherwise, return no filter to prevent 403
       return user.SameDeptCode ? { office: user.SameDeptCode } : {};
 
-    case ROLES.EMPLOYEE:
-      const fullName = getEmployeeFullName(user);
-      if (!fullName) throw new Error("Employee full name is required for record filtering.");
-      return { EmployeeNo: user.EmployeeNo };
+    case ROLES.EMPLOYEE: {
+      const employeeId = await resolveEmployeeId(user);
+      return { employee_id: employeeId };
+    }
 
     default:
       return {};
@@ -88,7 +95,7 @@ export async function getAllRecords(user, query = {}) {
   const sortDir =
     String(query.sortDir).toLowerCase() === "asc" ? "ASC" : "DESC";
 
-  const where = buildRecordScopeWhere(user);
+  const where = await buildRecordScopeWhere(user);
 
   if (user.role_id === ROLES.SUPER_ADMIN && office !== "All") {
     where.office = office;
@@ -104,7 +111,7 @@ export async function getAllRecords(user, query = {}) {
           { propNumber: { [Op.like]: `%${search}%` } },
           { areMeNo: { [Op.like]: `%${search}%` } },
           { office: { [Op.like]: `%${search}%` } },
-          
+
           sequelizeWhere(
             fn(
               "concat",
@@ -178,7 +185,7 @@ export async function getRecordByOfficeName(id, user) {
   }
   const where = {
     id,
-    ...buildRecordScopeWhere(user),
+    ...(await buildRecordScopeWhere(user)),
   };
 
 }
@@ -190,7 +197,7 @@ export async function getRecordById(id, user) {
 
   const where = {
     id,
-    ...buildRecordScopeWhere(user),
+    ...(await buildRecordScopeWhere(user)),
   };
 
   return await Record.findOne({ where });
@@ -205,8 +212,11 @@ export async function createRecord(data, user) {
     throw new Error("Employees are not allowed to create records.");
   }
 
+  const employeeId = await resolveEmployeeId(user);
+
   const payload = { ...data };
-  payload.EmployeeNo = user.EmployeeNo;
+  payload.employee_id = employeeId;
+
   if (user.role_id === ROLES.ADMIN) {
     if (!user.SameDeptCode) {
       throw new Error("User has no SameDeptCode.");
@@ -233,6 +243,12 @@ export async function updateRecord(id, data, user) {
   if (!record) return null;
 
   const payload = { ...data };
+
+  // NOTE: employee_id (ownership) is intentionally left untouched here.
+  // Editing a record's article/description/etc. as an Admin/SuperAdmin
+  // should not reassign who the accountable officer is. If you DO want
+  // edits to reassign ownership to the editor, uncomment:
+  // payload.employee_id = await resolveEmployeeId(user);
 
   if (user.role_id === ROLES.ADMIN) {
     if (!user.SameDeptCode) {
@@ -277,7 +293,7 @@ export async function generateRecordsReportPdf(req, res) {
       throw new Error("Authenticated user not found.");
     }
 
-    const where = buildRecordScopeWhere(req.user);
+    const where = await buildRecordScopeWhere(req.user);
 
     if (req.user.role_id === ROLES.SUPER_ADMIN && office !== "All") {
       where.office = office;
@@ -291,22 +307,48 @@ export async function generateRecordsReportPdf(req, res) {
             { article: { [Op.like]: `%${search}%` } },
             { description: { [Op.like]: `%${search}%` } },
             { propNumber: { [Op.like]: `%${search}%` } },
-            { accountableOfficer: { [Op.like]: `%${search}%` } },
             { areMeNo: { [Op.like]: `%${search}%` } },
             { office: { [Op.like]: `%${search}%` } },
+            sequelizeWhere(
+              fn(
+                "concat",
+                col("Employee.FirstName"),
+                " ",
+                col("Employee.LastName")
+              ),
+              { [Op.like]: `%${search}%` }
+            ),
           ],
         },
       ];
     }
 
-    const rows = await Record.findAll({
+    const records = await Record.findAll({
       where,
+      include: [
+        {
+          model: Employee,
+          attributes: ["FirstName", "LastName"],
+        },
+      ],
       order: [
         ["office", "ASC"],
-        ["accountableOfficer", "ASC"],
+        [col("Employee.FirstName"), "ASC"],
+        [col("Employee.LastName"), "ASC"],
         ["article", "ASC"],
         ["createdAt", "DESC"],
       ],
+    });
+
+    // Compute accountableOfficer the same way getAllRecords does
+    const rows = records.map((record) => {
+      const r = record.toJSON();
+      return {
+        ...r,
+        accountableOfficer: `${r.Employee?.FirstName || ""} ${
+          r.Employee?.LastName || ""
+        }`.trim(),
+      };
     });
 
     const assetsDir = path.join(__dirname, "..", "assets");
@@ -346,10 +388,7 @@ export async function generateRecordsReportPdf(req, res) {
         bottom: includePageNumbers ? "50px" : "24px",
         left: "24px",
       },
-      format:
-        paperSize === "letter"
-          ? "Letter"
-          : "A4",
+      format: paperSize === "letter" ? "Letter" : "A4",
     };
 
     const pdf = await page.pdf(pdfOptions);
@@ -372,4 +411,4 @@ export async function generateRecordsReportPdf(req, res) {
       await browser.close();
     }
   }
-}           
+}
