@@ -24,13 +24,13 @@ export default function OfficeDetailsPage() {
 
   // create employee state
   const [openCreateEmployee, setOpenCreateEmployee] = useState(false);
-  const [createEmployeeForm, setCreateEmployeeForm] = useState({ email: "", password: "" });
+  const [createEmployeeForm, setCreateEmployeeForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [creatingEmployee, setCreatingEmployee] = useState(false);
 
   // edit employee state
   const [openEditEmployee, setOpenEditEmployee] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
-  const [editForm, setEditForm] = useState({ email: "", password: "" });
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [savingEmployee, setSavingEmployee] = useState(false);
 
   const [deletingEmployee, setDeletingEmployee] = useState(null);
@@ -65,15 +65,22 @@ export default function OfficeDetailsPage() {
 
   const handleCreateEmployee = async () => {
     try {
+      if (!createEmployeeForm.firstName || !createEmployeeForm.lastName) {
+        toast.error("First name and last name are required.");
+        return;
+      }
       if (!createEmployeeForm.email || !createEmployeeForm.password) {
         toast.error("Email and password are required.");
         return;
       }
       setCreatingEmployee(true);
-      await employeeApi.createEmployee(createEmployeeForm);
+      await employeeApi.createEmployee({
+        ...createEmployeeForm,
+        SameDeptCode: office?.code,
+      });
       toast.success("Employee created successfully.");
       setOpenCreateEmployee(false);
-      setCreateEmployeeForm({ email: "", password: "" });
+      setCreateEmployeeForm({ firstName: "", lastName: "", email: "", password: "" });
       await loadDetails();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to create employee.");
@@ -88,7 +95,7 @@ export default function OfficeDetailsPage() {
 
   const handleOpenEditEmployee = (emp) => {
     setEditTarget(emp);
-    setEditForm({ email: emp.account?.email || "", password: "" });
+    setEditForm({ firstName: emp.FirstName || "", lastName: emp.LastName || "", email: emp.account?.email || "", password: "" });
     setOpenEditEmployee(true);
   };
 
@@ -204,7 +211,6 @@ export default function OfficeDetailsPage() {
         onChange={setCreateField}
       />
 
-      {/* Edit Employee Modal */}
       <EditEmployeeModal
         open={openEditEmployee}
         selectedEmployee={editTarget}
@@ -213,7 +219,7 @@ export default function OfficeDetailsPage() {
         onClose={() => {
           setOpenEditEmployee(false);
           setEditTarget(null);
-          setEditForm({ email: "", password: "" });
+          setEditForm({ firstName: "", lastName: "", email: "", password: "" });
         }}
         onConfirm={handleEditEmployee}
         onChange={setEditField}

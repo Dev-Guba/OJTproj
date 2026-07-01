@@ -25,7 +25,7 @@ export default function AdminManagement() {
   const [search, setSearch] = useState("");
   const [officeFilter, setOfficeFilter] = useState("All");
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [form, setForm] = useState({ email: "", password: "", SameDeptCode: "" });
+  const [form, setForm] = useState({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "", SameDeptCode: "" });
 
   const loadAdmins = async () => {
     try {
@@ -52,7 +52,7 @@ export default function AdminManagement() {
   };
 
   const setField = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-  const resetForm = () => setForm({ email: "", password: "", SameDeptCode: "" });
+  const resetForm = () => setForm({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "", SameDeptCode: "" });
 
   const officeList = useMemo(() => {
     const fromApi = offices.map((o) => String(o.code ?? "").trim()).filter(Boolean);
@@ -62,70 +62,98 @@ export default function AdminManagement() {
 
   const officeOptions = useMemo(() => ["All", ...officeList], [officeList]);
 
-  const handleCreateAdmin = async () => {
-    try {
-      if (!form.email || !form.password || !form.SameDeptCode) {
-        toast.error("Please fill in all fields.");
-        return;
-      }
-      setCreating(true);
-      await Api.createAdmin({
-        email: form.email.trim(),
-        password: form.password,
-        SameDeptCode: form.SameDeptCode.trim(),
-      });
-      toast.success("Admin created successfully.");
-      setOpenCreate(false);
-      resetForm();
-      await loadAdmins();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create admin.");
-    } finally {
-      setCreating(false);
+const handleCreateAdmin = async () => {
+  try {
+    if (!form.EmployeeNo) {
+      toast.error("Please enter employee number!");
+      return;
     }
-  };
+    if (!form.firstName || !form.lastName) {
+      toast.error("Please enter first and last name.");
+      return;
+    }
+    if (!form.email || !form.password || !form.SameDeptCode) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
+    setCreating(true);
+    await Api.createAdmin({
+      employeeNo: form.EmployeeNo.trim(),
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.trim(),
+      password: form.password,
+      SameDeptCode: form.SameDeptCode.trim(),
+    });
+    toast.success("Admin created successfully.");
+    setOpenCreate(false);
+    resetForm();
+    await loadAdmins();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to create admin.");
+  } finally {
+    setCreating(false);
+  }
+};
 
   const handleOpenEdit = (admin) => {
-    setSelectedAdmin(admin);
-    setForm({ email: admin.email ?? "", password: "", SameDeptCode: admin.SameDeptCode ?? "" });
-    setOpenEdit(true);
-  };
+  setSelectedAdmin(admin);
+  setForm({
+    EmployeeNo: admin.EmployeeNo ?? "",
+    firstName: admin.FirstName ?? "",
+    lastName: admin.LastName ?? "",
+    email: admin.Email ?? "",
+    password: "",
+    SameDeptCode: admin.SameDeptCode ?? "",
+  });
+  setOpenEdit(true);
+};
 
-  const handleUpdateAdmin = async () => {
-    try {
-      if (!selectedAdmin || !form.email || !form.SameDeptCode) {
-        toast.error("Please fill in email and office.");
-        return;
-      }
-      setUpdating(true);
-      const payload = { email: form.email.trim(), SameDeptCode: form.SameDeptCode.trim() };
-      if (form.password?.trim()) payload.password = form.password.trim();
-      await Api.updateAdmin(selectedAdmin.EmployeeId, payload);
-      toast.success("Admin updated successfully.");
-      setOpenEdit(false);
-      setSelectedAdmin(null);
-      resetForm();
-      await loadAdmins();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update admin.");
-    } finally {
-      setUpdating(false);
+const handleUpdateAdmin = async () => {
+  try {
+    if (!selectedAdmin || !form.firstName || !form.lastName || !form.email || !form.SameDeptCode) {
+      toast.error("Please fill in all required fields.");
+      return;
     }
-  };
+    setUpdating(true);
+    const payload = {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.trim(),
+      SameDeptCode: form.SameDeptCode.trim(),
+    };
+    if (form.password?.trim()) payload.password = form.password.trim();
+    await Api.updateAdmin(selectedAdmin.EmployeeId, payload);
+    toast.success("Admin updated successfully.");
+    setOpenEdit(false);
+    setSelectedAdmin(null);
+    resetForm();
+    await loadAdmins();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to update admin.");
+  } finally {
+    setUpdating(false);
+  }
+};
 
   const handleDeleteAdmin = async (admin) => {
-    if (!window.confirm(`Delete admin "${admin.email}"?`)) return;
-    try {
-      setDeletingId(admin.EmployeeId);
-      await Api.deleteAdmin(admin.EmployeeId);
-      toast.success("Admin deleted successfully.");
-      await loadAdmins();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to delete admin.");
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  if (!window.confirm(`Delete admin "${admin.Email}"?`)) return;
+  try {
+    setDeletingId(admin.EmployeeId);
+    await Api.deleteAdmin(admin.EmployeeId);
+    toast.success("Admin deleted successfully.");
+    await loadAdmins();
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to delete admin.");
+  } finally {
+    setDeletingId(null);
+  }
+};
 
   useEffect(() => {
     if (isSuperAdmin) { loadAdmins(); loadOffices(); }

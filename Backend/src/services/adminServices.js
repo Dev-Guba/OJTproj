@@ -57,17 +57,12 @@ export async function verifyLogin(email, password) {
   };
 }
 
-/**
- * =====================================
- * FIND ADMIN BY ID
- * =====================================
- */
 export async function findAdminById(id) {
   return await Employee.findOne({
     where: {
       EmployeeId: id,
       role_id: {
-        [Op.in]: [1, 2], // SUPER_ADMIN, ADMIN
+        [Op.in]: [1, 2],
       },
     },
     attributes: [
@@ -83,11 +78,6 @@ export async function findAdminById(id) {
   });
 }
 
-/**
- * =====================================
- * GET ADMINS LIST
- * =====================================
- */
 export async function getAdmins(filters = {}) {
   const search = String(filters.search ?? "").trim();
 
@@ -126,12 +116,13 @@ export async function getAdmins(filters = {}) {
   });
 }
 
-/**
- * =====================================
- * CREATE ADMIN
- * =====================================
- */
-export async function createAdminUser({ email, password, SameDeptCode }) {
+
+// function generateAdminEmployeeNo() {
+//   const rand = Math.floor(10 + Math.random() * 90);
+//   return `ADM-${Date.now()}${rand}`;
+// }
+
+export async function createAdminUser({ employeeNo, email, password, SameDeptCode, firstName, lastName }) {
   const existing = await Employee.findOne({
     where: { Email: email },
   });
@@ -141,18 +132,17 @@ export async function createAdminUser({ email, password, SameDeptCode }) {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   return await Employee.create({
+    EmployeeNo: employeeNo,
     Email: email,
     Password: hashedPassword,
     SameDeptCode,
+    FirstName: firstName ? String(firstName).trim() : null,
+    LastName: lastName ? String(lastName).trim() : null,
     role_id: 2,
   });
 }
 
-/**
- * =====================================
- * UPDATE ADMIN
- * =====================================
- */
+
 export async function updateAdminUser(userId, data) {
   const admin = await Employee.findOne({
     where: {
@@ -169,6 +159,18 @@ export async function updateAdminUser(userId, data) {
     payload.Email = data.email.trim();
   }
 
+  if (data.employeeNo !== undefined) {
+    payload.EmployeeNo = String(data.employeeNo).trim();
+  }
+
+  if (data.firstName !== undefined) {
+  payload.FirstName = String(data.firstName).trim();
+}
+
+if (data.lastName !== undefined) {
+  payload.LastName = String(data.lastName).trim();
+}
+
   if (data.SameDeptCode) {
     payload.SameDeptCode = data.SameDeptCode.trim().toUpperCase();
   }
@@ -182,11 +184,6 @@ export async function updateAdminUser(userId, data) {
   return admin;
 }
 
-/**
- * =====================================
- * DELETE ADMIN
- * =====================================
- */
 export async function deleteAdminUser(userId) { 
   const admin = await Employee.findOne({
     where: {
@@ -204,12 +201,10 @@ export async function deleteAdminUser(userId) {
 export async function createUserByAdmin(currentUser, data) {
   const { email, password, role_id, EmployeeNo, SameDeptCode } = data;
 
-  // 🔒 1. Validate creator role
   if (!currentUser || !currentUser.role_id) {
     throw new Error("Unauthorized");
   }
 
-  // 🔒 2. Role restriction logic
   if (currentUser.role_id === ROLES.ADMIN && role_id !== ROLES.EMPLOYEE) {
     throw new Error("Admin can only create Employee accounts");
   }
@@ -218,21 +213,17 @@ export async function createUserByAdmin(currentUser, data) {
     throw new Error("Employees cannot create accounts");
   }
 
-  // 🔒 3. Prevent invalid roles
   if (![ROLES.ADMIN, ROLES.EMPLOYEE].includes(role_id)) {
     throw new Error("Invalid role assignment");
   }
 
-  // 🔒 4. Check if email already exists
   const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
     throw new Error("Email already exists");
   }
 
-  // 🔒 5. Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 🔒 6. Create user
   const newUser = await User.create({
     email: email.trim(),
     password: hashedPassword,
@@ -242,4 +233,9 @@ export async function createUserByAdmin(currentUser, data) {
   });
 
   return newUser;
+}
+
+export async function findOfficeByCode(code) {
+  if (!code) return null;
+  return await Office.findOne({ where: { code } });
 }

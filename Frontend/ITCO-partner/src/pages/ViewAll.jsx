@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { recordsApi } from "../api/records.api";
+import officeApi from "../api/office.api";
 import RecordsTable from "./records/RecordsTable";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -23,6 +24,8 @@ export default function ViewAll() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
+  const [officeFilter, setOfficeFilter] = useState("All");
+  const [officeOptions, setOfficeOptions] = useState(["All"]);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ key: "office", dir: "asc" });
   const [confirm, setConfirm] = useState({ open: false, id: null });
@@ -48,6 +51,8 @@ export default function ViewAll() {
         search: debouncedSearch,
         sortKey: sort.key,
         sortDir: sort.dir,
+        // ✅ only meaningful for Super Admin; backend ignores it for Admin/Employee anyway
+        office: officeFilter,
       });
       setItems(res.rows || []);
       setTotal(res.total || 0);
@@ -58,12 +63,29 @@ export default function ViewAll() {
     }
   };
 
+  // ✅ Load office list once, only if Super Admin
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    (async () => {
+      try {
+        const res = await officeApi.getAll({ status: "active" });
+        const codes = (res.data?.data || [])
+          .map((o) => String(o.code ?? "").trim())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        setOfficeOptions(["All", ...codes]);
+      } catch {
+        // non-fatal — filter just won't have extra options beyond "All"
+      }
+    })();
+  }, [isSuperAdmin]);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => { loadData(); }, [page, debouncedSearch, sort]);
+  useEffect(() => { loadData(); }, [page, debouncedSearch, sort, officeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -96,6 +118,7 @@ export default function ViewAll() {
     try {
       const res = await recordsApi.generateReport({
         search: debouncedSearch,
+        office: officeFilter, // ✅ keep report in sync with table filter
         paperSize: reportPaper,
         perPage: reportPerPage,
         includeHeader: reportIncludeHeader,
@@ -125,6 +148,10 @@ export default function ViewAll() {
         search={search}
         onSearchChange={(e) => { setSearch(e.target.value); setPage(1); }}
         onOpenReport={() => setReportOpen(true)}
+        isSuperAdmin={isSuperAdmin}
+        officeFilter={officeFilter}
+        officeOptions={officeOptions}
+        onOfficeChange={(e) => { setOfficeFilter(e.target.value); setPage(1); }}
       />
 
       {error && (

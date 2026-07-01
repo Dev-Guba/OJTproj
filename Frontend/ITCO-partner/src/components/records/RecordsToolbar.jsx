@@ -1,16 +1,40 @@
 import Input from "../ui/Input";
-import Button from "../ui/Button";
+import Select from "../ui/Select";
 
-export default function RecordsToolbar({ search, onSearchChange, onOpenReport }) {
+export default function RecordsToolbar({
+  search,
+  onSearchChange,
+  onOpenReport,
+  isSuperAdmin,
+  officeFilter,
+  officeOptions = [],
+  onOfficeChange,
+}) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div className="w-full sm:max-w-sm">
-        <Input
-          label="Search"
-          placeholder="Article, Prop No., Officer, Office..."
-          value={search}
-          onChange={onSearchChange}
-        />
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="w-full sm:max-w-sm">
+          <Input
+            label="Search"
+            placeholder="Article, Prop No., Officer, Office..."
+            value={search}
+            onChange={onSearchChange}
+          />
+        </div>
+
+        {isSuperAdmin && (
+          <div className="w-full sm:w-48">
+            <Select
+              label="Office"
+              value={officeFilter}
+              onChange={onOfficeChange}
+            >
+              {officeOptions.map((office) => (
+                <option key={office} value={office}>{office}</option>
+              ))}
+            </Select>
+          </div>
+        )}
       </div>
 
       <button

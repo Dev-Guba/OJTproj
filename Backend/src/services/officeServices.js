@@ -13,13 +13,12 @@ export async function getOffices(filters = {}, user) {
   }
 
   if (search) {
-  where[Op.or] = [
-    { code: { [Op.like]: `%${search}%` } },
-    { name: { [Op.like]: `%${search}%` } },
-  ];
-}
+    where[Op.or] = [
+      { code: { [Op.like]: `%${search}%` } },
+      { name: { [Op.like]: `%${search}%` } },
+    ];
+  }
 
-  // 🔥 ONLY CHANGE (ROLE RESTRICTION)
   if (user?.role_id === ROLES.ADMIN) {
     where.code = user.SameDeptCode;
   }
@@ -82,21 +81,25 @@ export async function getOfficeDetails(officeId) {
       SameDeptCode: office.code,
       DateFinish: null,
       SeparationType: null,
+      [Op.or]: [
+        { role_id: null },
+        { role_id: { [Op.notIn]: [ROLES.SUPER_ADMIN, ROLES.ADMIN] } },
+      ],
     },
     attributes: ["EmployeeId", "EmployeeNo", "FirstName", "LastName", "Email", "SameDeptCode", "role_id"],
     order: [["LastName", "ASC"], ["FirstName", "ASC"]],
     raw: true,
   });
 
-  // Accounts live in the User table, linked by EmployeeNo — not on the Employee row itself
   const employeeNos = employees.map((e) => e.EmployeeNo).filter(Boolean);
 
-  // AFTER
-const accounts = employeeNos.length
-  ? await User.findAll({
-      where: { EmployeeNo: { [Op.in]: employeeNos } },
-    })
-  : [];
+  const accounts = employeeNos.length
+    ? await User.findAll({
+        where: { EmployeeNo: { [Op.in]: employeeNos } },
+        attributes: ["EmployeeNo", "email"],
+        raw: true,
+      })
+    : [];
 
   const accountByEmployeeNo = new Map(accounts.map((a) => [a.EmployeeNo, a]));
 
@@ -104,8 +107,8 @@ const accounts = employeeNos.length
     const account = accountByEmployeeNo.get(emp.EmployeeNo);
     return {
       ...emp,
-      hasAccount: !!account,
-      account: account ? { email: account.email } : null,
+      hasAccount: !!account || !!emp.Email,
+      account: account ? { email: account.email } : emp.Email ? { email: emp.Email } : null,
     };
   });
 

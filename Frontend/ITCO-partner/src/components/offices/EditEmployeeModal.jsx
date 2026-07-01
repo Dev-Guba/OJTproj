@@ -31,6 +31,21 @@ export default function EditEmployeeModal({
           </div>
         )}
 
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="First Name"
+            value={form.firstName}
+            onChange={onChange("firstName")}
+            required
+          />
+          <Input
+            label="Last Name"
+            value={form.lastName}
+            onChange={onChange("lastName")}
+            required
+          />
+        </div>
+
         <Input
           label="Email"
           type="email"

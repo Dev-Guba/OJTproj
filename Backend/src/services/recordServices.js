@@ -64,6 +64,7 @@ export async function getAllRecords(user, query = {}) {
   const limit = Number(query.limit) || 8;
   const offset = (page - 1) * limit;
   const search = String(query.search ?? "").trim();
+  const office = String(query.office ?? "All").trim();
 
   const allowedSortKeys = [
     "article",
@@ -77,7 +78,7 @@ export async function getAllRecords(user, query = {}) {
     "areMeNo",
     "office",
     "createdAt",
-    "accountableOfficer", // virtual
+    "accountableOfficer",
   ];
 
   const sortKey = allowedSortKeys.includes(query.sortKey)
@@ -89,7 +90,10 @@ export async function getAllRecords(user, query = {}) {
 
   const where = buildRecordScopeWhere(user);
 
-  // 🔍 SEARCH
+  if (user.role_id === ROLES.SUPER_ADMIN && office !== "All") {
+    where.office = office;
+  }
+
   if (search) {
     where[Op.and] = [
       ...(where[Op.and] || []),
@@ -100,8 +104,7 @@ export async function getAllRecords(user, query = {}) {
           { propNumber: { [Op.like]: `%${search}%` } },
           { areMeNo: { [Op.like]: `%${search}%` } },
           { office: { [Op.like]: `%${search}%` } },
-
-          // ✅ FULL NAME SEARCH
+          
           sequelizeWhere(
             fn(
               "concat",
