@@ -28,14 +28,14 @@ export default function AdminFormModal({
       disabled={busy}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Input
+        <Input
             label="Employee Number"
             value={form.EmployeeNo}
             onChange={onChange("EmployeeNo")}
             placeholder="EMP-001"
             required
           />
+        <div className="grid grid-cols-2 gap-3">
           <Input
             label="First Name"
             value={form.firstName}

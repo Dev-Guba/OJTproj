@@ -24,13 +24,13 @@ export default function OfficeDetailsPage() {
 
   // create employee state
   const [openCreateEmployee, setOpenCreateEmployee] = useState(false);
-  const [createEmployeeForm, setCreateEmployeeForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [createEmployeeForm, setCreateEmployeeForm] = useState({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "" });
   const [creatingEmployee, setCreatingEmployee] = useState(false);
 
   // edit employee state
   const [openEditEmployee, setOpenEditEmployee] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
-  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [editForm, setEditForm] = useState({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "" });
   const [savingEmployee, setSavingEmployee] = useState(false);
 
   const [deletingEmployee, setDeletingEmployee] = useState(null);
@@ -95,7 +95,7 @@ export default function OfficeDetailsPage() {
 
   const handleOpenEditEmployee = (emp) => {
     setEditTarget(emp);
-    setEditForm({ firstName: emp.FirstName || "", lastName: emp.LastName || "", email: emp.account?.email || "", password: "" });
+    setEditForm({ EmployeeNo: emp.EmployeeNo || "", firstName: emp.FirstName || "", lastName: emp.LastName || "", email: emp.account?.email || "", password: "" });
     setOpenEditEmployee(true);
   };
 

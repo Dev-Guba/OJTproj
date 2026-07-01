@@ -14,33 +14,52 @@ function formatDate(v) {
   return String(v);
 }
 
+function renderRecordRow(r) {
+  return `
+    <tr>
+      <td>${escapeHtml(r.article)}</td>
+      <td>${escapeHtml(r.description)}</td>
+      <td class="font-medium">${escapeHtml(r.propNumber)}</td>
+      <td>${escapeHtml(formatDate(r.dateAcquired))}</td>
+      <td>${escapeHtml(r.unit)}</td>
+      <td class="num">${escapeHtml(r.unitValue)}</td>
+      <td class="num">${escapeHtml(r.balQty)}</td>
+      <td class="num">${escapeHtml(r.balValue)}</td>
+      <td>${escapeHtml(r.accountableOfficer)}</td>
+      <td>${escapeHtml(r.areMeNo)}</td>
+      <td>${escapeHtml(r.office)}</td>
+    </tr>
+  `;
+}
+
 export function buildRecordsReportHtml({
   rows,
   includeHeader,
-  
 
   // ✅ NEW: pass image src as data-uri from controller
   officialSealSrc = "",
   bagongPilipinasSrc = "",
 }) {
+  // Group rows by accountableOfficer, same as the React RecordsTable,
+  // so the amber header repeats per-officer instead of being a single
+  // static row for the whole report.
+  const grouped = rows.reduce((acc, row) => {
+    const officer = row.accountableOfficer || "No Officer";
+    if (!acc[officer]) acc[officer] = [];
+    acc[officer].push(row);
+    return acc;
+  }, {});
+
   const body = rows.length
-    ? rows
-        .map((r) => {
-          return `
+    ? Object.entries(grouped)
+        .map(([officer, records]) => {
+          const officerHeader = `
             <tr>
-              <td>${escapeHtml(r.article)}</td>
-              <td>${escapeHtml(r.description)}</td>
-              <td class="font-medium">${escapeHtml(r.propNumber)}</td>
-              <td>${escapeHtml(formatDate(r.dateAcquired))}</td>
-              <td>${escapeHtml(r.unit)}</td>
-              <td class="num">${escapeHtml(r.unitValue)}</td>
-              <td class="num">${escapeHtml(r.balQty)}</td>
-              <td class="num">${escapeHtml(r.balValue)}</td>
-              <td>${escapeHtml(r.accountableOfficer)}</td>
-              <td>${escapeHtml(r.areMeNo)}</td>
-              <td>${escapeHtml(r.office)}</td>
+              <td colspan="11" class="arleeRow">${escapeHtml(officer)}</td>
             </tr>
           `;
+          const recordRows = records.map(renderRecordRow).join("");
+          return officerHeader + recordRows;
         })
         .join("")
     : `<tr><td colspan="11" class="empty">No records found.</td></tr>`;
@@ -169,6 +188,16 @@ export function buildRecordsReportHtml({
         white-space: nowrap;
       }
 
+      /* Repeat column headers on every printed page so grouped
+         sections remain readable across page breaks */
+      table.tbl thead {
+        display: table-header-group;
+      }
+
+      table.tbl tbody tr {
+        break-inside: avoid;
+      }
+
       .center { text-align: center; }
       .num { text-align: right; white-space: nowrap; }
       .font-medium { font-weight: 700; }
@@ -179,16 +208,15 @@ export function buildRecordsReportHtml({
         padding: 16px;
       }
 
-      /* ✅ ARLEE row  */
+      /* ✅ Officer group header (was hardcoded "ARLEE" row, now dynamic) */
       .arleeRow {
         height: 30px;
         background: #bae6fd;           /* sky-200 */
         color: #b91c1c;                /* red-700-ish */
-        font-size: 24px;
+        font-size: 18px;
         font-weight: 700;
         text-align: center;
-        padding: 0 16px;
-        line-height: 40px;
+        padding: 6px 16px;
         letter-spacing: 2px;
         font-family: 'Cinzel', serif;
       }
@@ -241,12 +269,6 @@ export function buildRecordsReportHtml({
         <tr>
           <th class="center">Qty</th>
           <th class="center">Value</th>
-        </tr>
-
-        <tr>
-          <th colspan="11" class="arleeRow">
-            ARLEE CARLO S. (Information Technology Officer I)
-          </th>
         </tr>
       </thead>
 

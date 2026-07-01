@@ -33,7 +33,7 @@ export async function getEmployees(req, res) {
 
 export async function createEmployeeAccountController(req, res) {
   try {
-    const { EmployeeNo, email, password } = req.body;
+    const { EmployeeNo , firstName, lastName, email, password } = req.body;
 
     if (!EmployeeNo || !email || !password) {
       return res.status(400).json({
@@ -82,7 +82,11 @@ export async function createEmployeeAccountController(req, res) {
 
 export async function createEmployeeController(req, res) {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { EmployeeNo, email, password, firstName, lastName } = req.body;
+
+    if (!EmployeeNo) {
+      return res.status(400).json({ success: false, message: "Employee number is required" });
+    }
 
     if (!firstName || !lastName) {
       return res.status(400).json({ success: false, message: "First name and last name are required" });
@@ -100,6 +104,7 @@ export async function createEmployeeController(req, res) {
     }
 
     const result = await createEmployeeRecord({
+      EmployeeNo,
       email,
       password,
       firstName,
