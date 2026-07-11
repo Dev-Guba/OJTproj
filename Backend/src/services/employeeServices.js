@@ -34,24 +34,9 @@ export async function getEmployeesByDept(
   }
 
   if (availableOnly) {
-    const usedEmployeeNos = await User.findAll({
-      attributes: ["EmployeeNo"],
-      where: {
-        EmployeeNo: {
-          [Op.ne]: null,
-        },
-      },
-      raw: true,
-    });
-
-    const used = usedEmployeeNos.map((x) => x.EmployeeNo).filter(Boolean);
-
-    if (used.length > 0) {
-      whereClause.EmployeeNo = {
-        ...(whereClause.EmployeeNo || {}),
-        [Op.notIn]: used,
-      };
-    }
+  whereClause.role_id = {
+    [Op.notIn]: [ROLES.ADMIN, ROLES.SUPER_ADMIN],
+  };
   }
 
   const { count, rows } = await Employees.findAndCountAll({
@@ -262,7 +247,7 @@ export async function deleteEmployeeRecord(EmployeeNo, { callerRole, callerDeptC
 
 export async function createFullEmployee({ email, password, SameDeptCode }) {
   // Check email not already taken in CPTUsers
-  const existingUser = await User.findOne({ where: { email } });
+  const existingUser = await Employees.findOne({ where: { email } });
   if (existingUser) return { error: "Email is already in use" };
 
   
@@ -283,7 +268,7 @@ export async function createFullEmployee({ email, password, SameDeptCode }) {
 
   // Create the CPTUsers login account
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({
+  const user = await Employees.create({
     email: String(email).trim(),
     password: hashedPassword,
     EmployeeNo: employee.EmployeeNo,

@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import Employee from "../models/employee.model.js";
 import Office from "../models/office.model.js";
 import bcrypt from "bcrypt";
+import { ROLES } from "../constants/roles.js";
 
 /**
  * =====================================
@@ -122,24 +123,49 @@ export async function getAdmins(filters = {}) {
 //   return `ADM-${Date.now()}${rand}`;
 // }
 
-export async function createAdminUser({ employeeNo, email, password, SameDeptCode, firstName, lastName }) {
+export async function createAdminUser({
+  employeeId,
+  email,
+  password,
+  SameDeptCode,
+}) {
+  // Find the selected employee
+  const employee = await Employee.findByPk(employeeId);
+
+  if (!employee) {
+    throw new Error("Employee not found.");
+  }
+
+  // Prevent promoting an existing admin
+  if (employee.role_id === ROLES.ADMIN) {
+    throw new Error("Employee is already an admin.");
+  }
+
+  // Check if email is already used by another employee
   const existing = await Employee.findOne({
-    where: { Email: email },
+    where: {
+      Email: email,
+      EmployeeId: {
+        [Op.ne]: employeeId,
+      },
+    },
   });
 
-  if (existing) return null;
+  if (existing) {
+    throw new Error("Email already exists.");
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  return await Employee.create({
-    EmployeeNo: employeeNo,
-    Email: email,
+  // Update the existing employee instead of creating a new one
+  await employee.update({
+    Email: email.trim(),
     Password: hashedPassword,
     SameDeptCode,
-    FirstName: firstName ? String(firstName).trim() : null,
-    LastName: lastName ? String(lastName).trim() : null,
-    role_id: 2,
+    role_id: ROLES.ADMIN,
   });
+
+  return employee;
 }
 
 

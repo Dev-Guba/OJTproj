@@ -25,7 +25,7 @@ export default function AdminManagement() {
   const [search, setSearch] = useState("");
   const [officeFilter, setOfficeFilter] = useState("All");
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [form, setForm] = useState({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "", SameDeptCode: "" });
+  const [form, setForm] = useState({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "", SameDeptCode: "",employeeId: null });
 
   const loadAdmins = async () => {
     try {
@@ -52,7 +52,7 @@ export default function AdminManagement() {
   };
 
   const setField = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-  const resetForm = () => setForm({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "", SameDeptCode: "" });
+  const resetForm = () => setForm({ EmployeeNo: "", firstName: "", lastName: "", email: "", password: "", SameDeptCode: "", employeeId: null });
 
   const officeList = useMemo(() => {
     const fromApi = offices.map((o) => String(o.code ?? "").trim()).filter(Boolean);
@@ -66,6 +66,10 @@ const handleCreateAdmin = async () => {
   try {
     if (!form.EmployeeNo) {
       toast.error("Please enter employee number!");
+      return;
+    }
+     if (!form.employeeId) {
+      toast.error("Please select an employee from the suggestions.");
       return;
     }
     if (!form.firstName || !form.lastName) {
@@ -84,6 +88,7 @@ const handleCreateAdmin = async () => {
     setCreating(true);
     await Api.createAdmin({
       employeeNo: form.EmployeeNo.trim(),
+      employeeId: form.employeeId,
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       email: form.email.trim(),
@@ -96,7 +101,7 @@ const handleCreateAdmin = async () => {
     await loadAdmins();
   } catch (err) {
     toast.error(err?.response?.data?.message || "Failed to create admin.");
-  } finally {
+} finally {
     setCreating(false);
   }
 };

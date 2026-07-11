@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+​import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import {
@@ -103,51 +103,52 @@ export async function HandlegetAdmins(req, res) {
 export async function HandleCreateAdmin(req, res) {
   try {
     if (!isSuperAdmin(req)) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    const { employeeNo, email, password, SameDeptCode, firstName, lastName } = req.body;
-
-    if (!employeeNo || !firstName || !lastName) {
-      return res.status(400).json({
+      return res.status(403).json({
         success: false,
-        message: "Employee number, first name, and last name are required",
+        message: "Forbidden",
       });
     }
 
-    if (!SameDeptCode) {
+    const {
+      employeeId,
+      email,
+      password,
+      SameDeptCode,
+    } = req.body;
+
+    if (!employeeId) {
       return res.status(400).json({
         success: false,
-        message: "Office is required",
+        message: "Please select an employee.",
+      });
+    }
+
+    if (!email || !password || !SameDeptCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, password and office are required.",
       });
     }
 
     const newAdmin = await createAdminUser({
-      employeeNo,
+      employeeId,
       email,
       password,
       SameDeptCode,
-      firstName,
-      lastName,
     });
-
-    if (!newAdmin) {
-      return res.status(409).json({
-        success: false,
-        message: "Email is already in use",
-      });
-    }
 
     return res.status(201).json({
       success: true,
-      message: "Admin created successfully",
+      message: "Admin created successfully.",
       data: newAdmin,
     });
+
   } catch (err) {
     console.error("Create admin error:", err);
+
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: err.message || "Server Error",
     });
   }
 }

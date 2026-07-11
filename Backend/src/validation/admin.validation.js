@@ -9,13 +9,16 @@ export const adminLoginSchema = z.object({
 
 export const createAdminSchema = z.object({
   body: z.object({
-    employeeNo: z.string().min(1, "Employee number is required"),
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
+    employeeId: z.number({
+      required_error: "Employee is required",
+    }),
+
     email: z.string().email("Email must be valid"),
+
     password: z
       .string()
       .min(6, "Password must be at least 6 characters"),
+
     SameDeptCode: z
       .string()
       .min(1, "Office is required"),
