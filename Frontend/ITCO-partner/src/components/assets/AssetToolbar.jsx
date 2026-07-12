@@ -10,7 +10,8 @@ export default function AssetToolbar({
   setUnitFilter,
   sortBy,
   setSortBy,
-}) {
+  onNewAsset,
+}){
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
@@ -55,7 +56,10 @@ export default function AssetToolbar({
         </div>
 
         {/* Button */}
-        <Button className="h-11 whitespace-nowrap px-6">
+        <Button
+    className="h-11 whitespace-nowrap px-6"
+    onClick={onNewAsset}
+>
           <Plus className="h-4 w-4" />
           New Asset
         </Button>

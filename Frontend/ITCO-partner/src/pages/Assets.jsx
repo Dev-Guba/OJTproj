@@ -1,17 +1,24 @@
 import { useMemo, useState } from "react";
-
+import AssetPickerModal from "../components/assets/AssetPickerModal";
+import AddAssetModal from "../components/assets/AddAssetModal";
 import AssetStats from "../components/assets/AssetStats";
 import AssetToolbar from "../components/assets/AssetToolbar";
 import AssetTable from "../components/assets/AssetTable";
 import ViewAssetModal from "../components/assets/ViewAssetModal";
 
 export default function Assets() {
-  const [search, setSearch] = useState("");
-  const [unitFilter, setUnitFilter] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+const [search, setSearch] = useState("");
+const [unitFilter, setUnitFilter] = useState("");
+const [sortBy, setSortBy] = useState("newest");
 
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+// View Asset Modal
+const [modalOpen, setModalOpen] = useState(false);
+const [selectedAsset, setSelectedAsset] = useState(null);
+
+// New Asset Flow
+const [pickerOpen, setPickerOpen] = useState(false);
+const [addModalOpen, setAddModalOpen] = useState(false);
+const [selectedMasterAsset, setSelectedMasterAsset] = useState(null);
 
   const assets = [
     {
@@ -182,14 +189,15 @@ export default function Assets() {
         totalCategories={totalCategories}
       />
 
-      <AssetToolbar
-        search={search}
-        setSearch={setSearch}
-        unitFilter={unitFilter}
-        setUnitFilter={setUnitFilter}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-      />
+<AssetToolbar
+    search={search}
+    setSearch={setSearch}
+    unitFilter={unitFilter}
+    setUnitFilter={setUnitFilter}
+    sortBy={sortBy}
+    setSortBy={setSortBy}
+    onNewAsset={() => setPickerOpen(true)}
+/>
 
       <AssetTable
         assets={filteredAssets}
@@ -201,6 +209,30 @@ export default function Assets() {
         asset={selectedAsset}
         onClose={() => setModalOpen(false)}
       />
+
+     <AssetPickerModal
+    open={pickerOpen}
+    onClose={() => setPickerOpen(false)}
+    assets={assets}
+onSelect={(asset) => {
+    setSelectedMasterAsset(asset);
+    setPickerOpen(false);
+    setAddModalOpen(true);
+}}
+/>
+
+<AddAssetModal
+    open={addModalOpen}
+    asset={selectedMasterAsset}
+    onClose={() => setAddModalOpen(false)}
+    onSave={(data) => {
+        console.log("READY FOR BACKEND");
+
+        console.log(data);
+
+        setAddModalOpen(false);
+    }}
+/>
 
     </div>
   );
