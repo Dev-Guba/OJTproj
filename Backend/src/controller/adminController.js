@@ -214,7 +214,7 @@ export async function HandleDeleteAdmin(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "Admin deleted successfully",
+      message: "Admin deactivated successfully",
     });
   } catch (err) {
     console.error("Delete admin error:", err);

@@ -18,7 +18,7 @@ const Api = {
   },
 
   deleteAdmin: (id) => {
-    return Http.delete(`/admin/admins/${id}`);
+    return Http.patch(`/admin/admins/${id}`);
   },
 
   getAvailableEmployees: (params = {}) => {

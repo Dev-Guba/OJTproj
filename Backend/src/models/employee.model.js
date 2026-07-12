@@ -30,6 +30,11 @@ const Employee = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    isActive : {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: 1
+    },
 
     LastName: { type: DataTypes.STRING(50) },
     FirstName: { type: DataTypes.STRING(50) },
