@@ -5,65 +5,77 @@ module.exports = {
 
     await queryInterface.createTable('ICTORecords', {
 
-      id:{
+      id: {
         type: Sequelize.INTEGER,
-        autoIncrement:true,
-        primaryKey:true
+        autoIncrement: true,
+        primaryKey: true
       },
 
-
-      employee_id:{
+      employee_id: {
         type: Sequelize.INTEGER,
-        allowNull:false,
+        allowNull: false,
 
-        references:{
-          model:"Employees",
-          key:"EmployeeId"
+        references: {
+          model: "Employees",
+          key: "EmployeeId"
         },
 
-        onUpdate:"CASCADE",
-        onDelete:"NO ACTION"
+        onUpdate: "CASCADE",
+        onDelete: "NO ACTION"
       },
 
-
-      article_id:{
+      article_id: {
         type: Sequelize.INTEGER,
-        allowNull:false,
+        allowNull: false,
 
-        references:{
-          model:"Articles",
-          key:"ArticleId"
+        references: {
+          model: "Articles",
+          key: "ArticleId"
         },
 
-        onUpdate:"CASCADE",
-        onDelete:"NO ACTION"
+        onUpdate: "CASCADE",
+        onDelete: "NO ACTION"
       },
 
 
-      accountableOfficer:{
+      areMeNo: {
         type: Sequelize.STRING,
-        allowNull:true
+        allowNull: true
       },
 
 
-      office:{
+      office: {
         type: Sequelize.STRING,
-        allowNull:true
+        allowNull: true
       },
 
 
-      status:{
+      status: {
         type: Sequelize.STRING,
-        defaultValue:"ISSUED"
+        allowNull: false,
+        defaultValue: "ISSUED"
       },
 
 
-      createdAt:{
+      issuedDate: {
+        type: Sequelize.DATEONLY,
+        allowNull: true
+      },
+
+
+      returnedDate: {
+        type: Sequelize.DATEONLY,
+        allowNull: true
+      },
+
+
+      createdAt: {
         type: Sequelize.DATE,
-        allowNull:false
+        allowNull: false
       },
 
-      updatedAt:{
+
+      updatedAt: {
         type: Sequelize.DATE,
         allowNull:false
       }
