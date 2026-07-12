@@ -68,14 +68,12 @@ export default function useDashboardData(user) {
           isSuperAdmin ? Api.getAdmins() : Promise.resolve(null),
         ]);
 
-        // ✅ IMPORTANT FIX: recordsRes is already data
         setRecords(
           normalizeRecords(
             extractRecordRows(recordsRes)
           )
         );
 
-        // ✅ safe admin handling
         if (isSuperAdmin && adminsRes?.data) {
           setAdmins(extractAdmins(adminsRes.data));
         } else {

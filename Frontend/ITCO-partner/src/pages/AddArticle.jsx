@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ROLES } from "../utils/roles";
 import RecordForm from "../components/records/RecordForm";
-import EmployeeCombobox from "../components/records/EmployeeCombobox.jsx";
+
 
 const empty = {
   article: "",
@@ -29,8 +29,11 @@ export default function AddArticle() {
   const [form, setForm] = useState(empty);
   const [employees, setEmployees] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [articles, setArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [loadingArticles, setLoadingArticles] = useState(false);
 
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
@@ -49,6 +52,37 @@ export default function AddArticle() {
       toast.error("Failed to load employees.");
     } finally {
       setLoadingEmployees(false);
+    }
+  };
+
+  // There's no dedicated articles endpoint yet, so we mock one by pulling
+  // existing records and reducing them to their unique article names.
+  const loadArticles = async () => {
+    try {
+      setLoadingArticles(true);
+      const res = await recordsApi.getAll({ page: 1, limit: 500 });
+      const rows = res.rows || [];
+
+      const seen = new Map();
+      for (const row of rows) {
+        const name = (row.article || "").trim();
+        if (!name) continue;
+
+        const key = name.toLowerCase();
+        if (!seen.has(key)) {
+          seen.set(key, {
+            article: name,
+            unit: row.unit ?? "",
+            unitValue: row.unitValue == null ? "" : String(row.unitValue),
+          });
+        }
+      }
+
+      setArticles(Array.from(seen.values()));
+    } catch {
+      toast.error("Failed to load articles.");
+    } finally {
+      setLoadingArticles(false);
     }
   };
 
@@ -89,6 +123,15 @@ export default function AddArticle() {
       if (matchedEmployee) {
         setSelectedEmployeeId(String(matchedEmployee.EmployeeId));
       }
+
+      const matchedArticle = articles.find(
+        (a) =>
+          a.article.toLowerCase() === (item.article ?? "").trim().toLowerCase()
+      );
+
+      if (matchedArticle) {
+        setSelectedArticle(matchedArticle.article);
+      }
     } catch {
       toast.error("Failed to load record.");
       navigate("/dashboard/view");
@@ -97,6 +140,10 @@ export default function AddArticle() {
 
   useEffect(() => {
     loadEmployees();
+  }, []);
+
+  useEffect(() => {
+    loadArticles();
   }, []);
 
   useEffect(() => {
@@ -109,10 +156,10 @@ export default function AddArticle() {
   }, [editId, isAdmin, user?.SameDeptCode]);
 
   useEffect(() => {
-    if (employees.length > 0) {
+    if (employees.length > 0 && articles.length > 0) {
       loadRecordForEdit();
     }
-  }, [editId, employees]);
+  }, [editId, employees, articles]);
 
   const employeeOptions = useMemo(() => {
     return employees.map((emp) => ({
@@ -121,6 +168,14 @@ export default function AddArticle() {
       raw: emp,
     }));
   }, [employees]);
+
+  const articleOptions = useMemo(() => {
+    return articles.map((item) => ({
+      value: item.article,
+      label: item.unit ? `${item.article} — ${item.unit}` : item.article,
+      raw: item,
+    }));
+  }, [articles]);
 
   const handleEmployeeChange = (e) => {
     const employeeId = e.target.value;
@@ -136,6 +191,21 @@ export default function AddArticle() {
       ...prev,
       accountableOfficer: `${emp.FirstName ?? ""} ${emp.LastName ?? ""}`.trim(),
       office: emp.SameDeptCode ?? prev.office,
+    }));
+  };
+
+  const handleArticleChange = (e) => {
+    const articleValue = e.target.value;
+    setSelectedArticle(articleValue);
+
+    const match = articles.find((item) => item.article === articleValue);
+    if (!match) return;
+
+    setForm((prev) => ({
+      ...prev,
+      article: match.article,
+      unit: match.unit || prev.unit,
+      unitValue: match.unitValue || prev.unitValue,
     }));
   };
 
@@ -202,6 +272,7 @@ export default function AddArticle() {
           office: isAdmin ? user?.SameDeptCode || "" : "",
         });
         setSelectedEmployeeId("");
+        setSelectedArticle("");
       }
 
       navigate("/dashboard/view");
@@ -218,11 +289,15 @@ export default function AddArticle() {
         form={form}
         employeeOptions={employeeOptions}
         selectedEmployeeId={selectedEmployeeId}
+        articleOptions={articleOptions}
+        selectedArticle={selectedArticle}
         loading={loading}
         loadingEmployees={loadingEmployees}
+        loadingArticles={loadingArticles}
         editMode={!!editId}
         onFieldChange={set}
         onEmployeeChange={handleEmployeeChange}
+        onArticleChange={handleArticleChange}
         onSubmit={onSubmit}
         onCancel={() => navigate("/dashboard/view")}
       />

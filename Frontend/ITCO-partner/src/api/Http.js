@@ -5,8 +5,6 @@ const Http = axios.create({
   baseURL: "http://localhost:3000",
   headers: { "Content-Type": "application/json" },
 });
-
-// Attach token to every request
 Http.interceptors.request.use(
   (config) => {
     try {
@@ -18,7 +16,6 @@ Http.interceptors.request.use(
         config.headers.Authorization = `Bearer ${auth.token}`;
       }
     } catch {
-      // ignore parse errors
     }
 
     return config;
@@ -31,13 +28,10 @@ Http.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
 
-    // If token is invalid/expired, clear auth and reload to login
     if (status === 401) {
       localStorage.removeItem(STORAGE_KEYS.AUTH);
-      // reload forces Protected routes to kick user back to login
       window.location.href = "/";
     }
-
     return Promise.reject(error);
   }
 );
