@@ -14,9 +14,9 @@ const verifyToken = (req, res, next) => {
 
     req.user = {
       ...decoded,
-      SameDeptCode: decoded.officeCode,   // 👈 map officeCode → SameDeptCode
-      role_id: decoded.roleId,            // 👈 map roleId → role_id
-      EmployeeNo: decoded.employeeNo,     // 👈 map employeeNo → EmployeeNo
+      SameDeptCode: decoded.officeCode,   
+      role_id: decoded.roleId,            
+      EmployeeNo: decoded.employeeNo,    
     };
 
     next();
