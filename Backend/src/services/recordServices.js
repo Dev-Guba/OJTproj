@@ -1,4 +1,4 @@
-import { Record, Employee } from "../models/index.js";
+import { Record, Employee, Article } from "../models/index.js";
 import puppeteer from "puppeteer";
 import { Op, where as sequelizeWhere, fn, col } from "sequelize";
 import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
@@ -68,53 +68,75 @@ async function buildRecordScopeWhere(user) {
 
 export async function getAllRecords(user, query = {}) {
   const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 8;
+  const limit = Number(query.limit) || 50;
   const offset = (page - 1) * limit;
+
   const search = String(query.search ?? "").trim();
   const office = String(query.office ?? "All").trim();
 
   const allowedSortKeys = [
+    "office",
+    "status",
+    "areMeNo",
+    "issuedDate",
+    "returnedDate",
+    "createdAt",
+    "accountableOfficer",
     "article",
     "description",
     "propNumber",
-    "dateAcquired",
-    "unit",
-    "unitValue",
-    "balQty",
-    "balValue",
-    "areMeNo",
-    "office",
-    "createdAt",
-    "accountableOfficer",
   ];
 
   const sortKey = allowedSortKeys.includes(query.sortKey)
     ? query.sortKey
-    : "office";
+    : "createdAt";
 
   const sortDir =
-    String(query.sortDir).toLowerCase() === "asc" ? "ASC" : "DESC";
+    String(query.sortDir).toLowerCase() === "asc"
+      ? "ASC"
+      : "DESC";
+
 
   const where = await buildRecordScopeWhere(user);
 
+
+  // Super Admin office filtering
   if (user.role_id === ROLES.SUPER_ADMIN && office !== "All") {
     where.office = office;
   }
 
+
+  // Search
   if (search) {
+
     where[Op.and] = [
       ...(where[Op.and] || []),
+
       {
         [Op.or]: [
-          { article: { [Op.like]: `%${search}%` } },
-          { description: { [Op.like]: `%${search}%` } },
-          { propNumber: { [Op.like]: `%${search}%` } },
-          { areMeNo: { [Op.like]: `%${search}%` } },
-          { office: { [Op.like]: `%${search}%` } },
+
+          {
+            areMeNo: {
+              [Op.like]: `%${search}%`,
+            },
+          },
+
+          {
+            office: {
+              [Op.like]: `%${search}%`,
+            },
+          },
+
+          {
+            status: {
+              [Op.like]: `%${search}%`,
+            },
+          },
+
 
           sequelizeWhere(
             fn(
-              "concat",
+              "CONCAT",
               col("Employee.FirstName"),
               " ",
               col("Employee.LastName")
@@ -123,59 +145,205 @@ export async function getAllRecords(user, query = {}) {
               [Op.like]: `%${search}%`,
             }
           ),
+
+
+          {
+            "$Article.article$": {
+              [Op.like]: `%${search}%`,
+            },
+          },
+
+          {
+            "$Article.description$": {
+              [Op.like]: `%${search}%`,
+            },
+          },
+
+          {
+            "$Article.propNumber$": {
+              [Op.like]: `%${search}%`,
+            },
+          },
+
         ],
       },
     ];
   }
 
-  // 🔽 ORDER
-  let order = [["createdAt", "DESC"]];
 
-  if (sortKey === "accountableOfficer") {
-    order = [
-      [col("Employee.FirstName"), sortDir],
-      [col("Employee.LastName"), sortDir],
-    ];
-  } else {
-    order = [
-      [sortKey, sortDir],
-      ["createdAt", "DESC"],
-    ];
+
+  // Sorting
+  let order = [];
+
+  switch (sortKey) {
+
+    case "accountableOfficer":
+
+      order = [
+        [
+          Employee,
+          "FirstName",
+          sortDir
+        ],
+        [
+          Employee,
+          "LastName",
+          sortDir
+        ],
+      ];
+
+      break;
+
+
+
+    case "article":
+
+      order = [
+        [
+          Article,
+          "article",
+          sortDir
+        ],
+      ];
+
+      break;
+
+
+
+    case "description":
+
+      order = [
+        [
+          Article,
+          "description",
+          sortDir
+        ],
+      ];
+
+      break;
+
+
+
+    case "propNumber":
+
+      order = [
+        [
+          Article,
+          "propNumber",
+          sortDir
+        ],
+      ];
+
+      break;
+
+
+
+    default:
+
+      order = [
+        [
+          sortKey,
+          sortDir
+        ],
+      ];
+
+      if (sortKey !== "createdAt") {
+        order.push([
+          "createdAt",
+          "DESC"
+        ]);
+      }
+
+      break;
   }
 
+
+
   const { rows, count } = await Record.findAndCountAll({
+
     where,
+
     limit,
+
     offset,
+
     distinct: true,
 
+
     include: [
+
       {
         model: Employee,
-        attributes: ["FirstName", "LastName"],
+
+        attributes: [
+          "EmployeeId",
+          "FirstName",
+          "LastName",
+        ],
+
+        required:false,
       },
+
+
+      {
+        model: Article,
+
+        required:false,
+      },
+
     ],
 
+
     order,
+
   });
 
-  // 🎯 FORMAT OUTPUT
-  const formattedRows = rows.map((record) => {
+
+
+  const formattedRows = rows.map(record => {
+
     const r = record.toJSON();
 
+
     return {
-      ...r,
-      accountableOfficer: `${r.Employee?.FirstName || ""} ${
-        r.Employee?.LastName || ""
-      }`.trim(),
+      id: r.id,
+      employee_id: r.employee_id,
+      article_id: r.article_id,
+      areMeNo: r.areMeNo,
+      office: r.office,
+      status: r.status,
+      issuedDate: r.issuedDate,
+      returnedDate: r.returnedDate,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      accountableOfficer:
+        `${r.Employee?.FirstName ?? ""} ${r.Employee?.LastName ?? ""}`
+        .trim(),
+      article: r.Article?.article ?? null,
+      description: r.Article?.description ?? null,
+      propNumber: r.Article?.propNumber ?? null,
+      dateAcquired: r.Article?.dateAcquired ?? null,
+      unit: r.Article?.unit ?? null,
+      unitValue: r.Article?.unitValue ?? null,
+      balQty: r.Article?.balQty ?? null,
+      balValue: r.Article?.balValue ?? null,
+
     };
+
   });
 
+
+
   return {
+
     rows: formattedRows,
+
     total: count,
+
     page,
+
     limit,
+
   };
 }
 

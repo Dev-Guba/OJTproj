@@ -42,9 +42,14 @@ export async function handleRecords(req, res) {
     });
 
   } catch (err) {
-    console.log("Cannot get records ", err);
-    return res.status(500).json({ error: "Server Error" });
-  }
+   console.error(err);
+
+   console.log(err.parent.errors);
+
+   err.parent.errors.forEach(e => {
+      console.log(e.message);
+   });
+}
 }
 
 export async function handleCreateRecords(req,res){
