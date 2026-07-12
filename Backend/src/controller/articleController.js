@@ -1,5 +1,5 @@
 import { success } from "zod";
-import { getArticle } from "../services/articleServices.js";
+import { getArticle,createArticle } from "../services/articleServices.js";
 
 export async function handleGetArticle(req, res){
     try {
@@ -15,4 +15,21 @@ export async function handleGetArticle(req, res){
             message: "Server error"
         })
     }
+}
+
+export async function createArticleController(req, res) {
+    try {
+        const article = await createArticle(req.body);
+        return res.status(201).json({
+            success: true,
+            article
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+
 }
