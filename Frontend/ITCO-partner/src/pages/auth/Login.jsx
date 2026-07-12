@@ -66,10 +66,10 @@ export default function Login() {
               className="mx-auto mb-4 h-16 w-16 object-contain drop-shadow-sm"
             />
             <h1 className="text-lg font-semibold text-slate-900">
-              Provincial Administrator's Office
+              Cebu Provincial Government
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Records Management System
+              Asset Management System
             </p>
 
             <div className="mx-auto mt-4 h-px w-12 bg-amber-400" />
@@ -116,14 +116,9 @@ export default function Login() {
 
           {/* Footer */}
           <div className="border-t border-slate-100 px-8 py-4 text-center text-xs text-slate-400">
-            © {new Date().getFullYear()} Provincial Administrator's Office
+            Information Technology and Communications Office
           </div>
         </div>
-
-        {/* Below card tagline */}
-        <p className="mt-5 text-center text-xs text-white/40">
-          Authorized personnel only
-        </p>
       </div>
     </div>
   );
