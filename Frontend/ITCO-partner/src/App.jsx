@@ -10,6 +10,7 @@ import { useAuth } from "./context/AuthContext";
 import AdminManagement from "./pages/superadmin/AdminManagement";
 import OfficeManagement from "./pages/superadmin/OfficeManagement";
 import OfficeDetailsPage from "./pages/superadmin/OfficeDetailsPage";
+import Assets from "./pages/Assets";
 
 function Protected({ children }) {
   const { user, authReady } = useAuth();
@@ -34,6 +35,7 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="add" element={<AddArticle />} />
         <Route path="view" element={<ViewAll />} />
+        <Route path="assets" element={<Assets />} />
         <Route path="search" element={<Search />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admins" element={<AdminManagement />} />
