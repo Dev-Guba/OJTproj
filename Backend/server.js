@@ -14,7 +14,8 @@ import sequelize from "./src/config/db.js";
 import adminRoutes from "./src/routes/adminRoute.js";
 import recordRoutes from "./src/routes/recordRoute.js";
 
-import "./src/models/index.js";
+import { Article } from "./src/models/index.js";
+import registerAuditListeners from "./src/listeners/auditListener.js";
 
 
 const app = express();
@@ -66,6 +67,11 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected.");
+
+    registerAuditListeners();
+
+    await Article.sync();
+    console.log("✅ Articles table ready.");
 
     // await seedAdminIfMissing();
 

@@ -14,8 +14,14 @@ export default function Assets() {
   const [unitFilter, setUnitFilter] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+// View Asset Modal
+const [modalOpen, setModalOpen] = useState(false);
+const [selectedAsset, setSelectedAsset] = useState(null);
+
+// New Asset Flow
+const [pickerOpen, setPickerOpen] = useState(false);
+const [addModalOpen, setAddModalOpen] = useState(false);
+const [selectedMasterAsset, setSelectedMasterAsset] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -141,14 +147,15 @@ export default function Assets() {
         totalCategories={totalCategories}
       />
 
-      <AssetToolbar
-        search={search}
-        setSearch={setSearch}
-        unitFilter={unitFilter}
-        setUnitFilter={setUnitFilter}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-      />
+<AssetToolbar
+    search={search}
+    setSearch={setSearch}
+    unitFilter={unitFilter}
+    setUnitFilter={setUnitFilter}
+    sortBy={sortBy}
+    setSortBy={setSortBy}
+    onNewAsset={() => setPickerOpen(true)}
+/>
 
       {loading ? (
         <div className="text-center py-10">

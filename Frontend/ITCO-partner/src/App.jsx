@@ -11,6 +11,7 @@ import AdminManagement from "./pages/superadmin/AdminManagement";
 import OfficeManagement from "./pages/superadmin/OfficeManagement";
 import OfficeDetailsPage from "./pages/superadmin/OfficeDetailsPage";
 import Assets from "./pages/Assets";
+import AuditLogs from "./pages/AuditLogs";
 
 function Protected({ children }) {
   const { user, authReady } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="add" element={<AddArticle />} />
         <Route path="view" element={<ViewAll />} />
         <Route path="assets" element={<Assets />} />
+        <Route path="audit-logs" element={<AuditLogs />} />
         <Route path="search" element={<Search />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admins" element={<AdminManagement />} />

@@ -32,7 +32,6 @@ export async function handleGetRecordID(req, res){
 
 export async function handleRecords(req, res) {
   try {
-
     const result = await getAllRecords(req.user, req.query);
 
     return res.status(200).json({
@@ -42,14 +41,12 @@ export async function handleRecords(req, res) {
     });
 
   } catch (err) {
-   console.error(err);
-
-   console.log(err.parent.errors);
-
-   err.parent.errors.forEach(e => {
-      console.log(e.message);
-   });
-}
+    console.error("handleRecords error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch records",
+    });
+  }
 }
 
 export async function handleCreateRecords(req,res){
@@ -65,7 +62,7 @@ export async function handleCreateRecords(req,res){
       data: result,
     });
   } catch (err) {
-    console.log("Create records error ", err);
+    console.error("Create records error:", err);
     return res.status(500).json({error: "Server error"});
   }
 }

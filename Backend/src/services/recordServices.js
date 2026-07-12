@@ -6,6 +6,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ROLES } from "../constants/roles.js";
+import { EVENTS } from "../events/eventTypes.js";
+import { publishAuditEvent } from "../events/auditPublisher.js";
+import { buildAuditPayload } from "./auditPayloadBuilder.js";
+import { AUDIT_ACTIONS } from "../constants/auditActions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -395,7 +399,26 @@ export async function createRecord(data, user) {
 
   console.log("createRecord received data:", data);
 
-  return await Record.create(payload);
+  const record = await Record.create(payload);
+
+publishAuditEvent(
+  EVENTS.RECORD_CREATED,
+  buildAuditPayload({
+    user,
+
+    module: "Records",
+
+    action: AUDIT_ACTIONS.CREATE,
+
+    entity: "ICTORecords",
+
+    entityId: record.id,
+
+    afterState: record.toJSON(),
+  })
+);
+
+return record;
 }
 
 export async function updateRecord(id, data, user) {
@@ -408,6 +431,7 @@ export async function updateRecord(id, data, user) {
   }
 
   const record = await getRecordById(id, user);
+  const beforeState = record.toJSON();
   if (!record) return null;
 
   const payload = { ...data };
@@ -426,7 +450,28 @@ export async function updateRecord(id, data, user) {
     payload.office = user.SameDeptCode;
   }
 
-  return await record.update(payload);
+  const updated = await record.update(payload);
+
+publishAuditEvent(
+  EVENTS.RECORD_UPDATED,
+  buildAuditPayload({
+    user,
+
+    module: "Records",
+
+    action: AUDIT_ACTIONS.UPDATE,
+
+    entity: "ICTORecords",
+
+    entityId: updated.id,
+
+    beforeState,
+
+    afterState: updated.toJSON(),
+  })
+);
+
+return updated;
 }
 
 export async function deleteRecord(id, user) {
@@ -441,7 +486,24 @@ export async function deleteRecord(id, user) {
   const record = await getRecordById(id, user);
   if (!record) return null;
 
+  const beforeState = record.toJSON();
   await record.destroy();
+  publishAuditEvent(
+  EVENTS.RECORD_DELETED,
+  buildAuditPayload({
+    user,
+
+    module: "Records",
+
+    action: AUDIT_ACTIONS.DELETE,
+
+    entity: "ICTORecords",
+
+    entityId: id,
+
+    beforeState,
+  })
+);
   return true;
 }
 
