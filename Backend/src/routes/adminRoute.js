@@ -32,7 +32,7 @@ router.post("/auth/login", loginLimiter, validate(adminLoginSchema), login);
 router.get("/admins", requireAuth, HandlegetAdmins);
 router.post("/admins", requireAuth, validate(createAdminSchema), HandleCreateAdmin);
 router.put("/admins/:id", requireAuth, HandleUpdateAdmin);
-router.delete("/admins/:id", requireAuth, HandleDeleteAdmin);
+router.patch("/admins/:id", requireAuth, HandleDeleteAdmin);
 router.get("/employees", requireAuth, getEmployees);
 
 router.post("/create-user", verifyToken, HandleCreateAdmin);

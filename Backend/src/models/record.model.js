@@ -10,68 +10,48 @@ const Record = sequelize.define(
       primaryKey: true,
     },
 
-    article: { 
-      type: DataTypes.STRING, 
-      allowNull: false 
-    },
-
-    description: { 
-      type: DataTypes.TEXT, 
-      allowNull: true 
-    },
-    
-    propNumber: { 
-      type: DataTypes.STRING, 
-      allowNull: false,
-      unique: true, // 🔥 important
-    },
-
-    dateAcquired: { 
-      type: DataTypes.DATEONLY, 
-      allowNull: false 
-    },
-
-    unit: { 
-      type: DataTypes.STRING, 
-      allowNull: true 
-    },
-
-    unitValue: { 
-      type: DataTypes.DECIMAL(18, 2), 
-      allowNull: false,
-      defaultValue: 0,
-    },
-
-    balQty: { 
-      type: DataTypes.DECIMAL(18, 2), 
-      allowNull: false,
-      defaultValue: 0,
-    },
-
-    balValue: { 
-      type: DataTypes.DECIMAL(18, 2), 
-      allowNull: false,
-      defaultValue: 0,
-    },
-
-    // ✅ NEW RELATIONAL FIELD
+    // Employee owner
     employee_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
 
-    areMeNo: { 
-      type: DataTypes.STRING, 
-      allowNull: true 
+    // Asset reference
+    article_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
 
-    office: { 
-      type: DataTypes.STRING, 
-      allowNull: true 
+    areMeNo: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
+
+    office: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    status: {
+      type: DataTypes.STRING,
+      allowNull:false,
+      defaultValue:"ISSUED"
+    },
+
+    issuedDate:{
+      type:DataTypes.DATEONLY,
+      allowNull:true
+    },
+
+    returnedDate:{
+      type:DataTypes.DATEONLY,
+      allowNull:true
+    }
+
   },
   {
-    timestamps: true,
+    tableName:"ICTORecords",
+    timestamps:true,
   }
 );
 

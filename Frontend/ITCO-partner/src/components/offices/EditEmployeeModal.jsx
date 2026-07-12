@@ -17,7 +17,7 @@ export default function EditEmployeeModal({
   return (
     <Modal
       open={open}
-      title="Edit Employee Account"
+      title="View Employee Account"
       onClose={onClose}
       onConfirm={onConfirm}
       confirmText={saving ? "Saving..." : "Save Changes"}

@@ -178,7 +178,10 @@ export async function deleteEmployeeController(req, res) {
     const isAdmin = req.user.role_id === ROLES.ADMIN;
 
     if (!isSuperAdmin && !isAdmin) {
-      return res.status(403).json({ success: false, message: "Forbidden" });
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden",
+      });
     }
 
     const result = await deleteEmployeeRecord(EmployeeNo, {
@@ -187,22 +190,26 @@ export async function deleteEmployeeController(req, res) {
     });
 
     if (result?.error) {
-      const code = result.error === "Employee not found" ? 404 : 403;
-      return res.status(code).json({ success: false, message: result.error });
-    }
+      const statusCode =
+        result.error === "Employee not found" ? 404 : 403;
 
-    const message =
-      result.data.removed === "full"
-        ? "Employee removed successfully."
-        : "Employee account access removed. HR record was kept.";
+      return res.status(statusCode).json({
+        success: false,
+        message: result.error,
+      });
+    }
 
     return res.status(200).json({
       success: true,
-      message,
+      message: result.data.message,
       data: result.data,
     });
   } catch (error) {
-    console.error("Delete employee error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Deactivate employee error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 }

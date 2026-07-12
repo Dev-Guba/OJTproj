@@ -30,7 +30,7 @@ export default function OfficeTable({
             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">ID</th>
             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Code</th>
             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Office Name</th>
-            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Status</th>
+            {/* <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Status</th> */}
             <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-400">Actions</th>
           </tr>
         </thead>
@@ -70,9 +70,9 @@ export default function OfficeTable({
                   <span className="font-semibold text-[#1e3a5f]">{office.code}</span>
                 </td>
                 <td className="px-5 py-4 text-slate-700">{office.name}</td>
-                <td className="px-5 py-4">
+                {/* <td className="px-5 py-4">
                   <StatusBadge status={office.status} />
-                </td>
+                </td> */}
                 <td className="px-5 py-4">
                   <div className="flex items-center justify-end gap-1">
                     <Button
@@ -81,9 +81,9 @@ export default function OfficeTable({
                       type="button"
                       onClick={() => onViewDetails?.(office.office_id)}
                     >
-                      Details
+                      View
                     </Button>
-                    <Button
+                    {/* <Button
                       size="icon"
                       variant="ghost"
                       type="button"
@@ -94,8 +94,8 @@ export default function OfficeTable({
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                    </Button>
-                    <Button
+                    </Button> */}
+                    {/* <Button
                       size="icon"
                       variant="ghost"
                       type="button"
@@ -110,7 +110,7 @@ export default function OfficeTable({
                         <path d="M10 11v6M14 11v6" />
                         <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                       </svg>
-                    </Button>
+                    </Button> */}
                   </div>
                 </td>
               </tr>

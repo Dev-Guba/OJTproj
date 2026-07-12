@@ -69,9 +69,9 @@ export default function OfficeEmployeesSection({
           />
 
           {/* ✅ Create Employee button */}
-          <Button size="sm" type="button" onClick={onCreateEmployee}>
+          {/* <Button size="sm" type="button" onClick={onCreateEmployee}>
             + Create Employee
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -115,10 +115,10 @@ export default function OfficeEmployeesSection({
       type="button"
       onClick={() => onEditEmployee?.(emp)}
     >
-      Edit
+      View Employee
     </Button>
 
-    <Button
+    {/* <Button
       size="sm"
       variant="danger"
       type="button"
@@ -126,7 +126,7 @@ export default function OfficeEmployeesSection({
       onClick={() => onDeleteEmployee?.(emp)}
     >
       {deletingEmployee === emp.EmployeeNo ? "Deleting..." : "Delete"}
-    </Button>
+    </Button> */}
   </div>
 </div>
                 </div>

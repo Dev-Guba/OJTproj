@@ -111,6 +111,7 @@ export async function getAdmins(filters = {}) {
       "role_id",
       "FirstName",
       "LastName",
+      "isActive"
     ],
     order: [["EmployeeId", "ASC"]],
     raw: true,
@@ -210,18 +211,24 @@ if (data.lastName !== undefined) {
   return admin;
 }
 
-export async function deleteAdminUser(userId) { 
-  const admin = await Employee.findOne({
-    where: {
-      EmployeeId: userId,
-      role_id: 2,
-    },
+export async function deleteAdminUser(EmployeeId) {
+  const employee = await Employee.findOne({
+    where: { EmployeeId }
   });
 
-  if (!admin) return null;
+  if (!employee) {
+    return { error: "Admin not found" };
+  }
 
-  await admin.destroy();
-  return true;
+  // Disable admin account
+  await employee.update({
+    isActive: false
+  });
+
+  return {
+    success: true,
+    message: "Admin account has been deactivated."
+  };
 }
 
 export async function createUserByAdmin(currentUser, data) {

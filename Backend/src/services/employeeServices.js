@@ -216,33 +216,51 @@ export async function updateEmployeeAccountByNo(EmployeeNo, data, { callerRole, 
 }
 
 export async function deleteEmployeeRecord(EmployeeNo, { callerRole, callerDeptCode }) {
-  const employee = await Employees.findOne({ where: { EmployeeNo } });
+  const employee = await Employees.findOne({
+    where: { EmployeeNo },
+  });
 
   if (!employee) {
     return { error: "Employee not found" };
   }
 
-  if (employee.role_id === ROLES.ADMIN || employee.role_id === ROLES.SUPER_ADMIN) {
+  if (
+    employee.role_id === ROLES.ADMIN ||
+    employee.role_id === ROLES.SUPER_ADMIN
+  ) {
     return { error: "Use Admin Management to manage admin accounts" };
   }
 
-  if (callerRole === ROLES.ADMIN && employee.SameDeptCode !== callerDeptCode) {
+  if (
+    callerRole === ROLES.ADMIN &&
+    employee.SameDeptCode !== callerDeptCode
+  ) {
     return { error: "You can only manage employees in your own office" };
   }
 
-  const linkedUser = await User.findOne({ where: { EmployeeNo } });
+  // Deactivate linked user account if it exists
+  const linkedUser = await User.findOne({
+    where: { EmployeeNo },
+  });
+
   if (linkedUser) {
-    await linkedUser.destroy();
+    await linkedUser.update({
+      isActive: false,
+    });
   }
 
-  const isSynthetic = String(EmployeeNo).startsWith("EMP-");
+  // Deactivate employee instead of deleting
+  await employee.update({
+    isActive: false,
+  });
 
-  if (isSynthetic) {
-    await employee.destroy();
-    return { data: { EmployeeNo, removed: "full" } };
-  }
-
-  return { data: { EmployeeNo, removed: "account-only" } };
+  return {
+    data: {
+      EmployeeNo,
+      status: "inactive",
+      message: "Employee has been deactivated successfully.",
+    },
+  };
 }
 
 export async function createFullEmployee({ email, password, SameDeptCode }) {
@@ -303,14 +321,27 @@ export async function updateEmployeeAccount({ EmployeeNo, email, password }) {
   return { data: { user_id: user.user_id, email: user.email, EmployeeNo } };
 }
 export async function deleteFullEmployee(EmployeeNo) {
-  const employee = await Employees.findOne({ where: { EmployeeNo } });
-  if (!employee) return { error: "Employee not found" };
+  const employee = await Employees.findOne({
+    where: { EmployeeNo },
+  });
 
-  // Delete CPTUsers account if exists
-  await User.destroy({ where: { EmployeeNo } });
+  if (!employee) {
+    return { error: "Employee not found" };
+  }
 
-  // Delete Employee record
-  await employee.destroy();
+  // Deactivate login account
+  await User.update(
+    { isActive: false },
+    { where: { EmployeeNo } }
+  );
 
-  return { success: true };
+  // Deactivate employee
+  await employee.update({
+    isActive: false,
+  });
+
+  return {
+    success: true,
+    message: "Employee has been deactivated successfully.",
+  };
 }

@@ -6,6 +6,7 @@ import slowDown from "express-slow-down";
 import employeeRoutes from "./src/routes/employeeRoutes.js";
 import officeRoutes from "./src/routes/officeRoute.js";
 import superAdminRoutes from "./src/routes/superAdminRoute.js";
+import articleRoute from "./src/routes/articleRoute.js";
 
 import helmet from "helmet";
 import { seedAdminIfMissing } from "./src/seed/seedAdmin.js";
@@ -23,7 +24,7 @@ app.set("trust proxy", 1);
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT","PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["Content-Disposition"],
   })
@@ -53,6 +54,7 @@ app.use("/admin", adminRoutes);
 app.use("/records", recordRoutes);
 app.use("/offices", officeRoutes);
 app.use("/superadmin", superAdminRoutes);
+app.use("/items",articleRoute)
 
 app.get("/health", (req, res) => {
   res.json({ status: "Backend is running" });
