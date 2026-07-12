@@ -35,6 +35,22 @@ const IconBuilding = (props) => (
   </svg>
 );
 
+const IconAssets = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+    <path d="M3.3 7 12 12l8.7-5"/>
+    <path d="M12 22V12"/>
+  </svg>
+);
+
 const IconSettings = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <circle cx="12" cy="12" r="3" />
@@ -193,6 +209,13 @@ export default function Sidebar({ open = false, onClose }) {
                 )}
               </div>
             )}
+            
+            <NavItem
+  to="/dashboard/assets"
+  label="Assets"
+  icon={<IconAssets className="h-4.5 w-4.5" />}
+  onClick={closeMobile}
+/>
 
             {isSuperAdmin && (
               <NavItem
@@ -228,6 +251,7 @@ export default function Sidebar({ open = false, onClose }) {
               onClick={closeMobile}
             />
           </div>
+          
 
           <div className="mt-auto pt-4">
             <Button variant="outline-dark" className="w-full justify-start rounded-xl" onClick={logout}>
