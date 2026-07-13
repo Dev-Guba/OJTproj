@@ -1,4 +1,5 @@
 import { Record, Employee, Article } from "../models/index.js";
+import sequelize from "../config/db.js";
 import puppeteer from "puppeteer";
 import { Op, where as sequelizeWhere, fn, col } from "sequelize";
 import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
@@ -380,35 +381,78 @@ export async function createRecord(data, user) {
     throw new Error("Employees are not allowed to create records.");
   }
 
-  const payload = { ...data };
+  const transaction = await sequelize.transaction();
 
-  // Employee must be selected from the frontend/Postman
-  if (!payload.employee_id) {
-    throw new Error("Employee is required.");
-  }
+  try {
+    const payload = { ...data };
 
-  const employee = await Employee.findByPk(payload.employee_id);
+    if (!payload.employee_id) {
+      throw new Error("Employee is required.");
+    }
 
-  if (!employee) {
-    throw new Error("Employee not found.");
-  }
+    if (!payload.article_id) {
+      throw new Error("Article is required.");
+    }
 
-  // For Admins, make sure they can only issue within their department
-  if (
-    user.role_id === ROLES.ADMIN &&
-    employee.SameDeptCode !== user.SameDeptCode
-  ) {
-    throw new Error(
-      "You are not allowed to issue assets to employees from another office."
+    const employee = await Employee.findByPk(payload.employee_id, {
+      transaction,
+    });
+
+    if (!employee) {
+      throw new Error("Employee not found.");
+    }
+
+    if (
+      user.role_id === ROLES.ADMIN &&
+      employee.SameDeptCode !== user.SameDeptCode
+    ) {
+      throw new Error(
+        "You are not allowed to issue assets to employees from another office."
+      );
+    }
+
+    const article = await Article.findByPk(payload.article_id, {
+      transaction,
+      lock: true,
+    });
+
+    if (!article) {
+      throw new Error("Article not found.");
+    }
+
+    const qty = Number(article.balQty);
+
+    if (qty <= 0) {
+      throw new Error("This article is already out of stock.");
+    }
+
+    payload.office = employee.SameDeptCode;
+
+    const record = await Record.create(payload, {
+      transaction,
+    });
+
+    const newQty = qty - 1;
+
+    const unitValue = Number(article.unitValue || 0);
+
+    await article.update(
+      {
+        balQty: newQty,
+        balValue: newQty * unitValue,
+      },
+      {
+        transaction,
+      }
     );
+
+    await transaction.commit();
+
+    return record;
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
   }
-
-  // Always derive the office from the employee
-  payload.office = employee.SameDeptCode;
-
-  console.log("createRecord received data:", payload);
-
-  return await Record.create(payload);
 }
 
 export async function updateRecord(id, data, user) {

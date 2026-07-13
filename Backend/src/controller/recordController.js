@@ -63,7 +63,10 @@ export async function handleCreateRecords(req,res){
     });
   } catch (err) {
     console.error("Create records error:", err);
-    return res.status(500).json({error: "Server error"});
+    return res.status(400).json({
+    success: false,
+    message: err.message
+});
   }
 }
 

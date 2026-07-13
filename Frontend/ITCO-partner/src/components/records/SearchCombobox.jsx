@@ -183,7 +183,33 @@ export default function SearchCombobox({
                     isHighlighted ? "bg-blue-50 text-blue-700" : "text-slate-700",
                   ].join(" ")}
                 >
-                  <span className="truncate">{option.label}</span>
+                  <div className="flex flex-col">
+  <span className="font-medium text-slate-800">
+    {option.label}
+  </span>
+
+  {option.raw?.propNumber && (
+    <span className="text-xs text-slate-500">
+      Property No.: {option.raw.propNumber}
+    </span>
+  )}
+
+  {option.raw?.balQty != null && (
+    <span
+      className={`text-xs font-semibold ${
+        Number(option.raw.balQty) <= 3
+          ? "text-red-600"
+          : "text-green-600"
+      }`}
+    >
+      Available:
+      {" "}
+      {option.raw.balQty}
+      {" "}
+      {option.raw.unit || ""}
+    </span>
+  )}
+</div>
                   {isSelected && (
                     <Check className="h-4 w-4 shrink-0 text-blue-600" />
                   )}

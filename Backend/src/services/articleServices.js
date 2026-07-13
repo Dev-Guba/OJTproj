@@ -1,8 +1,15 @@
 import Article  from "../models/article.model.js";
+import { Op } from "sequelize";
 
-export async function getArticle(){
-    const data = await Article.findAll();
-    return data;
+export async function getArticle() {
+    return await Article.findAll({
+        where: {
+            balQty: {
+                [Op.gt]: 0
+            }
+        },
+        order: [["article", "ASC"]]
+    });
 }
 
 export async function createArticle(data) {
