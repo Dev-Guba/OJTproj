@@ -11,20 +11,16 @@ const requiredString = (msg) =>
 
 export const recordCreateSchema = z.object({
   body: z.object({
-    article: requiredString("Article is required"),
-    description: z.string().optional().default(""),
-    propNumber: requiredString("Prop number is required"),
-    dateAcquired: requiredString("Date acquired is required"),
-    unit: z.string().optional().default(""),
-    unitValue: nullableNumber,
-    balQty: nullableNumber,
-    balValue: nullableNumber,
-    accountableOfficer: requiredString("Accountable office is required"),
-    areMeNo: z.string().optional().default(""),
-    office: requiredString("Office is required"),
-    employee_id: z.number({ required_error: "Employee is required" }), // 👈 add this
-    value: nullableNumber,
-    quantity: nullableNumber,
+    article_id: z.number({
+      required_error: "Article is required",
+    }),
+    employee_id: z.number({
+      required_error: "Employee is required",
+    }),
+    areMeNo: requiredString("ARE/ME number is required"),
+    status: requiredString("Status is required"),
+    issuedDate: requiredString("Issued date is required"),
+    returnedDate: z.string().nullable().optional(),
   }),
 });
 

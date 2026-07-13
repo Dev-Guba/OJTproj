@@ -5,7 +5,7 @@ import Employee from "./employee.model.js";
 import Status from "./status.model.js";
 import Office from "./office.model.js";
 import Article from "./article.model.js";
-import AuditLog from "./auditLog.model.js";
+// import AuditLog from "./auditLog.model.js";
 
 
 // ======================
@@ -84,5 +84,4 @@ export {
     Office,
     Status,
     Article,
-    AuditLog
 };

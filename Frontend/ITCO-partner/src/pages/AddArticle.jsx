@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { recordsApi } from "../api/records.api";
 import employeeApi from "../api/employee.api";
+import articleAPI from "../api/article.api.js"; // adjust path if needed
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ROLES } from "../utils/roles";
@@ -55,36 +56,18 @@ export default function AddArticle() {
     }
   };
 
-  // There's no dedicated articles endpoint yet, so we mock one by pulling
-  // existing records and reducing them to their unique article names.
   const loadArticles = async () => {
-    try {
-      setLoadingArticles(true);
-      const res = await recordsApi.getAll({ page: 1, limit: 500 });
-      const rows = res.rows || [];
-
-      const seen = new Map();
-      for (const row of rows) {
-        const name = (row.article || "").trim();
-        if (!name) continue;
-
-        const key = name.toLowerCase();
-        if (!seen.has(key)) {
-          seen.set(key, {
-            article: name,
-            unit: row.unit ?? "",
-            unitValue: row.unitValue == null ? "" : String(row.unitValue),
-          });
-        }
-      }
-
-      setArticles(Array.from(seen.values()));
-    } catch {
-      toast.error("Failed to load articles.");
-    } finally {
-      setLoadingArticles(false);
-    }
-  };
+  try {
+    setLoadingArticles(true);
+    const res = await articleAPI.fetchArticle();
+    const list = res.data?.data || [];
+    setArticles(list);
+  } catch {
+    toast.error("Failed to load articles.");
+  } finally {
+    setLoadingArticles(false);
+  }
+};
 
   const loadRecordForEdit = async () => {
     if (!editId) return;
@@ -126,11 +109,12 @@ export default function AddArticle() {
 
       const matchedArticle = articles.find(
         (a) =>
-          a.article.toLowerCase() === (item.article ?? "").trim().toLowerCase()
+          (a.article ?? "").trim().toLowerCase() ===
+          (item.article ?? "").trim().toLowerCase()
       );
 
       if (matchedArticle) {
-        setSelectedArticle(matchedArticle.article);
+        setSelectedArticle(String(matchedArticle.ArticleId));
       }
     } catch {
       toast.error("Failed to load record.");
@@ -171,7 +155,7 @@ export default function AddArticle() {
 
   const articleOptions = useMemo(() => {
     return articles.map((item) => ({
-      value: item.article,
+      value: String(item.ArticleId),
       label: item.unit ? `${item.article} — ${item.unit}` : item.article,
       raw: item,
     }));
@@ -195,17 +179,24 @@ export default function AddArticle() {
   };
 
   const handleArticleChange = (e) => {
-    const articleValue = e.target.value;
-    setSelectedArticle(articleValue);
+    const articleId = e.target.value;
+    setSelectedArticle(articleId);
 
-    const match = articles.find((item) => item.article === articleValue);
+    const match = articles.find(
+      (item) => String(item.ArticleId) === String(articleId)
+    );
     if (!match) return;
 
     setForm((prev) => ({
       ...prev,
-      article: match.article,
-      unit: match.unit || prev.unit,
-      unitValue: match.unitValue || prev.unitValue,
+      article: match.article ?? "",
+      description: match.description ?? "",
+      propNumber: match.propNumber ?? "",
+      dateAcquired: match.dateAcquired ?? "",
+      unit: match.unit ?? "",
+      unitValue: match.unitValue == null ? "" : String(match.unitValue),
+      balQty: match.balQty == null ? "" : String(match.balQty),
+      balValue: match.balValue == null ? "" : String(match.balValue),
     }));
   };
 
@@ -233,55 +224,50 @@ export default function AddArticle() {
   };
 
   const onSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const err = validate();
-    if (err) {
-      toast.error(err);
-      return;
+  const err = validate();
+  if (err) {
+    toast.error(err);
+    return;
+  }
+
+  setLoading(true);
+
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+  const payload = {
+  employee_id: selectedEmployeeId ? Number(selectedEmployeeId) : null,
+  article_id: selectedArticle ? Number(selectedArticle) : null,
+  areMeNo: (form.areMeNo || "").trim(),
+  status: "ISSUED",
+  issuedDate: today,
+};
+
+  console.log("payload being sent:", payload);
+
+  try {
+    if (editId) {
+      await recordsApi.update(editId, payload);
+      toast.success("Updated successfully.");
+    } else {
+      await recordsApi.create(payload);
+      toast.success("Submitted successfully.");
+      setForm({
+        ...empty,
+        office: isAdmin ? user?.SameDeptCode || "" : "",
+      });
+      setSelectedEmployeeId("");
+      setSelectedArticle("");
     }
 
-    setLoading(true);
-
-    const payload = {
-      article: (form.article || "").trim(),
-      description: (form.description || "").trim(),
-      propNumber: (form.propNumber || "").trim(),
-      dateAcquired: form.dateAcquired,
-      unit: (form.unit || "").trim(),
-      unitValue: form.unitValue === "" ? null : Number(form.unitValue),
-      balQty: form.balQty === "" ? null : Number(form.balQty),
-      balValue: form.balValue === "" ? null : Number(form.balValue),
-      accountableOfficer: (form.accountableOfficer || "").trim(),
-      areMeNo: (form.areMeNo || "").trim(),
-      office: (form.office || "").trim(),
-      employee_id: selectedEmployeeId ? Number(selectedEmployeeId) : null,
-    };
-
-    console.log("payload being sent:", payload);
-    
-    try {
-      if (editId) {
-        await recordsApi.update(editId, payload);
-        toast.success("Updated successfully.");
-      } else {
-        await recordsApi.create(payload);
-        toast.success("Submitted successfully.");
-        setForm({
-          ...empty,
-          office: isAdmin ? user?.SameDeptCode || "" : "",
-        });
-        setSelectedEmployeeId("");
-        setSelectedArticle("");
-      }
-
-      navigate("/dashboard/view");
-    } catch (ex) {
-      toast.error(ex?.response?.data?.message || "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    navigate("/dashboard/view");
+  } catch (ex) {
+    toast.error(ex?.response?.data?.message || "Something went wrong.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="max-w-4xl">

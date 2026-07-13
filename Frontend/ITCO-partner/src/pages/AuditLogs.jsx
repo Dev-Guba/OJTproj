@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 
-import AuditStats from "../components/logs/AuditStats";
-import AuditToolbar from "../components/logs/AuditToolbar";
-import AuditTable from "../components/logs/AuditTable";
+import AuditStats from "../components/logss/AuditStats";
+import AuditToolbar from "../components/logss/AuditToolbar";
+import AuditTable from "../components/logss/AuditTable";
 
 export default function AuditLogs() {
 
