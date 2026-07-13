@@ -15,7 +15,7 @@ import adminRoutes from "./src/routes/adminRoute.js";
 import recordRoutes from "./src/routes/recordRoute.js";
 
 import { Article } from "./src/models/index.js";
-import registerAuditListeners from "./src/listeners/auditListener.js";
+// import registerAuditListeners from "./src/listeners/auditListener.js";
 
 
 const app = express();
@@ -68,7 +68,7 @@ async function startServer() {
     await sequelize.authenticate();
     console.log("✅ Database connected.");
 
-    registerAuditListeners();
+ //   registerAuditListeners();
 
     await Article.sync();
     console.log("✅ Articles table ready.");

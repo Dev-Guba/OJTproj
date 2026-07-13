@@ -6,10 +6,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ROLES } from "../constants/roles.js";
-import { EVENTS } from "../events/eventTypes.js";
-import { publishAuditEvent } from "../events/auditPublisher.js";
-import { buildAuditPayload } from "./auditPayloadBuilder.js";
-import { AUDIT_ACTIONS } from "../constants/auditActions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -384,41 +380,35 @@ export async function createRecord(data, user) {
     throw new Error("Employees are not allowed to create records.");
   }
 
-  const employeeId = await resolveEmployeeId(user);
-
   const payload = { ...data };
-  payload.employee_id = employeeId;
 
-  if (user.role_id === ROLES.ADMIN) {
-    if (!user.SameDeptCode) {
-      throw new Error("User has no SameDeptCode.");
-    }
-
-    payload.office = user.SameDeptCode;
+  // Employee must be selected from the frontend/Postman
+  if (!payload.employee_id) {
+    throw new Error("Employee is required.");
   }
 
-  console.log("createRecord received data:", data);
+  const employee = await Employee.findByPk(payload.employee_id);
 
-  const record = await Record.create(payload);
+  if (!employee) {
+    throw new Error("Employee not found.");
+  }
 
-publishAuditEvent(
-  EVENTS.RECORD_CREATED,
-  buildAuditPayload({
-    user,
+  // For Admins, make sure they can only issue within their department
+  if (
+    user.role_id === ROLES.ADMIN &&
+    employee.SameDeptCode !== user.SameDeptCode
+  ) {
+    throw new Error(
+      "You are not allowed to issue assets to employees from another office."
+    );
+  }
 
-    module: "Records",
+  // Always derive the office from the employee
+  payload.office = employee.SameDeptCode;
 
-    action: AUDIT_ACTIONS.CREATE,
+  console.log("createRecord received data:", payload);
 
-    entity: "ICTORecords",
-
-    entityId: record.id,
-
-    afterState: record.toJSON(),
-  })
-);
-
-return record;
+  return await Record.create(payload);
 }
 
 export async function updateRecord(id, data, user) {
@@ -431,7 +421,6 @@ export async function updateRecord(id, data, user) {
   }
 
   const record = await getRecordById(id, user);
-  const beforeState = record.toJSON();
   if (!record) return null;
 
   const payload = { ...data };
@@ -450,28 +439,7 @@ export async function updateRecord(id, data, user) {
     payload.office = user.SameDeptCode;
   }
 
-  const updated = await record.update(payload);
-
-publishAuditEvent(
-  EVENTS.RECORD_UPDATED,
-  buildAuditPayload({
-    user,
-
-    module: "Records",
-
-    action: AUDIT_ACTIONS.UPDATE,
-
-    entity: "ICTORecords",
-
-    entityId: updated.id,
-
-    beforeState,
-
-    afterState: updated.toJSON(),
-  })
-);
-
-return updated;
+  return await record.update(payload);
 }
 
 export async function deleteRecord(id, user) {
@@ -486,24 +454,7 @@ export async function deleteRecord(id, user) {
   const record = await getRecordById(id, user);
   if (!record) return null;
 
-  const beforeState = record.toJSON();
   await record.destroy();
-  publishAuditEvent(
-  EVENTS.RECORD_DELETED,
-  buildAuditPayload({
-    user,
-
-    module: "Records",
-
-    action: AUDIT_ACTIONS.DELETE,
-
-    entity: "ICTORecords",
-
-    entityId: id,
-
-    beforeState,
-  })
-);
   return true;
 }
 
