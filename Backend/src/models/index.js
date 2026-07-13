@@ -5,6 +5,7 @@ import Employee from "./employee.model.js";
 import Status from "./status.model.js";
 import Office from "./office.model.js";
 import Article from "./article.model.js";
+import Backlog from "./backlog.model.js";
 // import AuditLog from "./auditLog.model.js";
 
 
@@ -74,6 +75,17 @@ Record.belongsTo(Article, {
   foreignKey: "article_id",
 });
 
+// ======================
+// Record ↔ Backlog
+// ======================
+
+Record.hasMany(Backlog, {
+  foreignKey: "records_id",
+});
+
+Backlog.belongsTo(Record, {
+  foreignKey: "records_id",
+});
 
 // Export
 export {
@@ -84,4 +96,5 @@ export {
     Office,
     Status,
     Article,
+    Backlog
 };

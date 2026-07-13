@@ -7,6 +7,7 @@ import employeeRoutes from "./src/routes/employeeRoutes.js";
 import officeRoutes from "./src/routes/officeRoute.js";
 import superAdminRoutes from "./src/routes/superAdminRoute.js";
 import articleRoute from "./src/routes/articleRoute.js";
+import backlogRoute from "./src/routes/backlogRoutes.js";
 
 import helmet from "helmet";
 import { seedAdminIfMissing } from "./src/seed/seedAdmin.js";
@@ -56,6 +57,7 @@ app.use("/records", recordRoutes);
 app.use("/offices", officeRoutes);
 app.use("/superadmin", superAdminRoutes);
 app.use("/items",articleRoute)
+app.use("/logs", backlogRoute)
 
 app.get("/health", (req, res) => {
   res.json({ status: "Backend is running" });
