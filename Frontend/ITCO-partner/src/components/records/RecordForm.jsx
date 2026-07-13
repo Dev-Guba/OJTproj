@@ -101,6 +101,13 @@ export default function RecordForm({
               emptyMessage="No articles found."
               
             />
+              <div className="mt-3">
+  <Input
+    label="Selected Article"
+    value={form.article ?? ""}
+    readOnly
+  />
+</div>
 
           </div>
 
@@ -108,12 +115,12 @@ export default function RecordForm({
 
           <div className="md:col-span-2">
 
-            <Textarea
-              label="Description"
-              rows={3}
-              value={form.description ?? ""}
-              readOnly
-            />
+<Textarea
+  label="Description"
+  rows={3}
+  value={form.description ?? ""}
+  onChange={onFieldChange("description")}
+/>
 
           </div>
 

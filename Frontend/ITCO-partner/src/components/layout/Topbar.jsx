@@ -27,7 +27,7 @@ export default function Topbar({ onMenu, right = null }) {
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
-      <div className="flex items-center justify-between px-4 py-4 md:px-6">
+      <div className="flex items-center justify-between px-3 py-3 sm:px-4 md:px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -42,9 +42,14 @@ export default function Topbar({ onMenu, right = null }) {
             </svg>
           </button>
 
-          <div>
-            <div className="text-base font-semibold text-slate-900">{header.title}</div>
-            <div className="text-sm text-slate-500">{header.subtitle}</div>
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold text-slate-900">
+              {header.title}
+            </div>
+
+            <div className="truncate text-sm text-slate-500">
+              {header.subtitle}
+            </div>
           </div>
         </div>
 

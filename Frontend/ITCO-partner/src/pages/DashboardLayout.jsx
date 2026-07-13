@@ -13,13 +13,13 @@ export default function DashboardLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenu={() => setMobileNavOpen(true)} right={null} />
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="px-6 py-7">
-            <div className="mx-auto w-full max-w-7xl">
-              <Outlet />
-            </div>
-          </div>
-        </main>
+<main className="flex-1 overflow-y-auto">
+  <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-6 md:py-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl">
+      <Outlet />
+    </div>
+  </div>
+</main>
       </div>
     </div>
   );

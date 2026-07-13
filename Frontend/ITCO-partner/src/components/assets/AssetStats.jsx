@@ -39,28 +39,28 @@ export default function AssetStats({
   ];
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
 
         return (
           <div
             key={card.title}
-            className={`rounded-2xl bg-gradient-to-r ${card.gradient} p-6 text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
+            className={`rounded-2xl bg-gradient-to-r ${card.gradient} p-4 sm:p-6 text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-white/80">
+                <p className="text-xs text-white/80 sm:text-sm">
                   {card.title}
                 </p>
 
-                <h2 className="mt-3 text-3xl font-bold">
+                <h2 className="mt-2 text-2xl font-bold sm:mt-3 sm:text-3xl">
                   {card.value}
                 </h2>
               </div>
 
-              <div className="rounded-xl bg-white/15 p-3">
-                <Icon className="h-6 w-6" />
+              <div className="rounded-xl bg-white/15 p-2.5 sm:p-3">
+                <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
             </div>
           </div>
