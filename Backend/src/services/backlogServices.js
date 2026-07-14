@@ -1,4 +1,4 @@
-import {Backlog ,Record} from '../models/index.js'
+import {Article, Backlog ,Employee,Record} from '../models/index.js'
 
 export const getAllBacklogs = async (req, res) => {
   try {
@@ -6,6 +6,14 @@ export const getAllBacklogs = async (req, res) => {
       include: [
         {
           model: Record,
+          include: [
+            {
+              model: Employee
+            },
+            {
+              model: Article
+            }
+          ]
         },
       ],
       order: [["tracking_id", "DESC"]],
@@ -15,4 +23,18 @@ export const getAllBacklogs = async (req, res) => {
   } catch (error) {
     console.log(error)
    }
+}
+
+export async function createForRecord(recordId, checkStatus, transaction) {
+  const form = await Backlog.create(
+    {
+      records_id: recordId,
+      status: checkStatus,
+    },
+    {
+      transaction,
+    }
+  );
+
+  return form;
 }
