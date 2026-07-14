@@ -10,8 +10,9 @@ import {
 } from "../controller/recordController.js";
 
 import {
-  generateRecordsReportPdf
-} from "../services/recordServices.js"
+  generateRecordsReportPdf,
+  generateRecordsReportExcel,
+} from "../services/recordServices.js";
 
 import  verifyToken  from "../middleware/verifyToken.js";
 
@@ -28,6 +29,7 @@ router.use(requireAuth);
 
 router.get("/", handleRecords);
 router.post("/report", generateRecordsReportPdf);
+router.post("/report/excel", generateRecordsReportExcel);
 router.get("/:id", validate(recordIdParamSchema), handleGetRecordID);
 router.post("/create", validate(recordCreateSchema), handleCreateRecords);
 router.put("/:id", validate(recordUpdateSchema), handleUpdateRecords);

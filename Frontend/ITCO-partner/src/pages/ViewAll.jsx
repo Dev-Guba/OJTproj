@@ -38,6 +38,7 @@ export default function ViewAll() {
   const [reportPerPage, setReportPerPage] = useState(20);
   const [reportIncludeHeader, setReportIncludeHeader] = useState(true);
   const [reportIncludePageNumbers, setReportIncludePageNumbers] = useState(true);
+  const [reportFormat, setReportFormat] = useState("pdf");
 
   const navigate = useNavigate();
 
@@ -195,12 +196,23 @@ export default function ViewAll() {
 
       <ReportOptionsModal
         open={reportOpen}
+        reportFormat={reportFormat}
+setReportFormat={setReportFormat}
         reportPaper={reportPaper}
         reportPerPage={reportPerPage}
         reportIncludeHeader={reportIncludeHeader}
         reportIncludePageNumbers={reportIncludePageNumbers}
         onClose={() => setReportOpen(false)}
-        onConfirm={async () => { setReportOpen(false); await onGenerateReport(); }}
+        onConfirm={async () => {
+    setReportOpen(false);
+
+    if (reportFormat === "pdf") {
+        await onGenerateReport();
+    } else {
+        // Excel export
+        console.log("Export Excel");
+    }
+}}
         setReportPaper={setReportPaper}
         setReportPerPage={setReportPerPage}
         setReportIncludeHeader={setReportIncludeHeader}

@@ -37,6 +37,20 @@ export const recordsApi = {
       headers: { Accept: "application/pdf" },
     });
   },
+
+  generateExcel(payload) {
+  return Http.post(
+    "/records/report/excel",
+    payload,
+    {
+      responseType: "blob",
+      headers: {
+        Accept:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      },
+    }
+  );
+},
 };
 
 export default recordsApi;
