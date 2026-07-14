@@ -154,24 +154,13 @@ export default function AddArticle() {
   }, [employees]);
 
   const articleOptions = useMemo(() => {
-  return articles.map((item) => ({
-    value: String(item.ArticleId),
+    return articles.map((item) => ({
+      value: String(item.ArticleId),
+      label: item.unit ? `${item.article} — ${item.unit}` : item.article,
+      raw: item,
+    }));
+  }, [articles]);
 
-    // This is what appears in the textbox after selecting
-    label: item.article,
-
-    // Extra information used only by the dropdown
-    raw: {
-      article: item.article,
-      description: item.description,
-      propNumber: item.propNumber,
-      balQty: item.balQty,
-      unit: item.unit,
-      unitValue: item.unitValue,
-      dateAcquired: item.dateAcquired,
-    },
-  }));
-}, [articles]);
   const handleEmployeeChange = (e) => {
     const employeeId = e.target.value;
     setSelectedEmployeeId(employeeId);
@@ -189,43 +178,36 @@ export default function AddArticle() {
     }));
   };
 
-const handleArticleChange = (e) => {
+  const handleArticleChange = (e) => {
+    console.log("ARTICLE EVENT:", e);
+
   const articleId = e.target.value;
 
-  setSelectedArticle(articleId);
+  console.log("ARTICLES:", articles);
 
   const match = articles.find(
     (item) => String(item.ArticleId) === String(articleId)
   );
 
-  if (!match) return;
+  console.log("MATCH:", match);
+    if (!match) return;
 
-  setForm((prev) => ({
-    ...prev,
-
-    // only auto-fill article name
-    article: match.article ?? "",
-
-    // optional auto-filled info
-    propNumber: match.propNumber ?? "",
-    dateAcquired: match.dateAcquired ?? "",
-    unit: match.unit ?? "",
-    unitValue: match.unitValue == null
-      ? ""
-      : String(match.unitValue),
-
-    balQty: match.balQty == null
-      ? ""
-      : String(match.balQty),
-
-    balValue: match.balValue == null
-      ? ""
-      : String(match.balValue),
-  }));
-};
+    setForm((prev) => ({
+      ...prev,
+      article: match.article ?? "",
+      description: match.description ?? "",
+      propNumber: match.propNumber ?? "",
+      dateAcquired: match.dateAcquired ?? "",
+      unit: match.unit ?? "",
+      unitValue: match.unitValue == null ? "" : String(match.unitValue),
+      balQty: match.balQty == null ? "" : String(match.balQty),
+      balValue: match.balValue == null ? "" : String(match.balValue),
+    }));
+  };
 
   const validate = () => {
     if (!(form.article || "").trim()) return "Article is required.";
+    if (!(form.propNumber || "").trim()) return "Prop number is required.";
     if (!form.dateAcquired) return "Date acquired is required.";
     if (!(form.accountableOfficer || "").trim()) {
       return "Please select an employee.";
@@ -299,7 +281,7 @@ const handleArticleChange = (e) => {
         employeeOptions={employeeOptions}
         selectedEmployeeId={selectedEmployeeId}
         articleOptions={articleOptions}
-        selectedArticle={selectedArticle}
+        selectedArticleId={selectedArticle}
         loading={loading}
         loadingEmployees={loadingEmployees}
         loadingArticles={loadingArticles}

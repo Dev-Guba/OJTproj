@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ROLES } from "../constants/roles.js";
+import {createForRecord} from "./backlogServices.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -431,6 +432,12 @@ export async function createRecord(data, user) {
     const record = await Record.create(payload, {
       transaction,
     });
+    
+    await createForRecord(
+      record.id,
+      "Created",
+      transaction
+    );
 
     const newQty = qty - 1;
 
@@ -464,26 +471,41 @@ export async function updateRecord(id, data, user) {
     throw new Error("Employees are not allowed to update records.");
   }
 
-  const record = await getRecordById(id, user);
-  if (!record) return null;
+  const transaction = await sequelize.transaction();
 
-  const payload = { ...data };
+  try {
+    const record = await getRecordById(id, user);
 
-  // NOTE: employee_id (ownership) is intentionally left untouched here.
-  // Editing a record's article/description/etc. as an Admin/SuperAdmin
-  // should not reassign who the accountable officer is. If you DO want
-  // edits to reassign ownership to the editor, uncomment:
-  // payload.employee_id = await resolveEmployeeId(user);
+    if (!record) return null;
 
-  if (user.role_id === ROLES.ADMIN) {
-    if (!user.SameDeptCode) {
-      throw new Error("User has no SameDeptCode.");
+    const payload = { ...data };
+
+    if (user.role_id === ROLES.ADMIN) {
+      if (!user.SameDeptCode) {
+        throw new Error("User has no SameDeptCode.");
+      }
+
+      payload.office = user.SameDeptCode;
     }
 
-    payload.office = user.SameDeptCode;
-  }
+    const updatedRecord = await record.update(payload, {
+      transaction,
+    });
 
-  return await record.update(payload);
+    await createForRecord(
+      record.id,
+      "TRANSFERRED",
+      transaction
+    );
+
+    await transaction.commit();
+
+    return updatedRecord;
+
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 }
 
 export async function deleteRecord(id, user) {
