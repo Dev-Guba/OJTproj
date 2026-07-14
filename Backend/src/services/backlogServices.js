@@ -1,6 +1,7 @@
-import {Article, Backlog ,Employee,Record} from '../models/index.js'
 
-export const getAllBacklogs = async (req, res) => {
+import { Article, Backlog, Employee, Record } from "../models/index.js";
+
+export const getAllBacklogs = async () => {
   try {
     const backlogs = await Backlog.findAll({
       include: [
@@ -8,33 +9,66 @@ export const getAllBacklogs = async (req, res) => {
           model: Record,
           include: [
             {
-              model: Employee
+              model: Employee,
+              attributes: ["FirstName", "LastName"],
             },
             {
-              model: Article
-            }
-          ]
+              model: Article,
+              attributes: ["article", "propNumber"],
+            },
+          ],
         },
       ],
       order: [["tracking_id", "DESC"]],
     });
 
-    return backlogs;
+    return backlogs.map((log) => {
+      const row = log.toJSON();
+
+      const employee = row.Record?.Employee;
+      const article = row.Record?.Article;
+
+      const fullName = [
+        employee?.FirstName,
+        employee?.LastName,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      return {
+        id: row.tracking_id,
+
+        createdAt: row.createdAt,
+
+        time: new Date(row.createdAt).toLocaleString(),
+
+        user: fullName || "Unknown",
+
+        role: "Employee",
+
+        module: "Records",
+
+        office: row.Record?.office || "-",
+
+        activity: article
+          ? `${row.status} ${article.article} (${article.propNumber})`
+          : row.status,
+
+        action: row.status.toUpperCase(),
+      };
+    });
   } catch (error) {
-    console.log(error)
-   }
-}
+    console.error(error);
+    throw error;
+  }
+};
 
 export async function createForRecord(recordId, checkStatus, transaction) {
-  const form = await Backlog.create(
+  return await Backlog.create(
     {
       records_id: recordId,
       status: checkStatus,
     },
-    {
-      transaction,
-    }
+    { transaction }
   );
-
-  return form;
 }

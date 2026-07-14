@@ -1,6 +1,7 @@
 import { Record, Employee, Article } from "../models/index.js";
 import sequelize from "../config/db.js";
 import puppeteer from "puppeteer";
+import ExcelJS from "exceljs";
 import { Op, where as sequelizeWhere, fn, col } from "sequelize";
 import { buildRecordsReportHtml } from "../templates/recordsReport.template.js";
 import fs from "fs";
@@ -627,16 +628,18 @@ export async function generateRecordsReportPdf(req, res) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const pdfOptions = {
-      printBackground: true,
-      margin: {
-        top: includeHeader ? "80px" : "30px",
-        right: "24px",
-        bottom: includePageNumbers ? "50px" : "24px",
-        left: "24px",
-      },
-      format: paperSize === "letter" ? "Letter" : "A4",
-    };
+const pdfOptions = {
+  landscape: true,
+  printBackground: true,
+  format: paperSize === "letter" ? "Letter" : "A4",
+
+  margin: {
+    top: includeHeader ? "60px" : "20px",
+    right: "20px",
+    bottom: includePageNumbers ? "40px" : "20px",
+    left: "20px",
+  },
+};
 
     const pdf = await page.pdf(pdfOptions);
 
@@ -657,5 +660,40 @@ export async function generateRecordsReportPdf(req, res) {
     if (browser) {
       await browser.close();
     }
+  }
+}
+
+export async function generateRecordsReportExcel(req, res) {
+  try {
+
+    const workbook = new ExcelJS.Workbook();
+
+    const worksheet = workbook.addWorksheet("ICTO Records");
+
+    worksheet.addRow(["Hello"]);
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="ICTO-Records.xlsx"'
+    );
+
+    await workbook.xlsx.write(res);
+
+    res.end();
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      success:false,
+      message:"Failed to generate excel"
+    });
+
   }
 }

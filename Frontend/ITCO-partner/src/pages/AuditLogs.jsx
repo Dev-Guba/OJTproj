@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import backlogApi from "../api/backlog.api";
 
 import AuditStats from "../components/logss/AuditStats";
 import AuditToolbar from "../components/logss/AuditToolbar";
@@ -6,44 +7,29 @@ import AuditTable from "../components/logss/AuditTable";
 
 export default function AuditLogs() {
 
-  // Temporary data
-  const [logs] = useState([
-    {
-      id: 1,
-      time: "09:15 AM",
-      user: "Juan Dela Cruz",
-      role: "Administrator",
-      module: "Records",
-      activity: "Created Laptop (ICTO-001)",
-      office: "ICTO",
-      action: "CREATE",
-      createdAt: "2026-07-13"
-    },
-    {
-      id: 2,
-      time: "09:42 AM",
-      user: "Maria Santos",
-      role: "Administrator",
-      module: "Assets",
-      activity: "Updated Printer (ICTO-022)",
-      office: "HR",
-      action: "UPDATE",
-      createdAt: "2026-07-13"
-    },
-    {
-      id: 3,
-      time: "10:30 AM",
-      user: "Pedro Reyes",
-      role: "Super Admin",
-      module: "Employees",
-      activity: "Deleted Employee Account",
-      office: "Accounting",
-      action: "DELETE",
-      createdAt: "2026-07-13"
-    }
-  ]);
+const [logs, setLogs] = useState([]);
+const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
+
+  const loadLogs = async () => {
+  try {
+    setLoading(true);
+
+    useEffect(() => {
+  loadLogs();
+}, []);
+
+    const response = await backlogApi.getAll();
+
+    setLogs(response.data || []);
+
+  } catch (err) {
+    console.error("Failed to load logs:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const filteredLogs = useMemo(() => {
 
@@ -83,9 +69,10 @@ export default function AuditLogs() {
         setSearch={setSearch}
       />
 
-      <AuditTable
-        rows={filteredLogs}
-      />
+<AuditTable
+  rows={filteredLogs}
+  loading={loading}
+/>
 
     </div>
 
