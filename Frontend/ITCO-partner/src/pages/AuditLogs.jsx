@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import backlogApi from "../api/backlog.api";
+import backlogApi from "../api/backlog.api.js";
 
 import AuditStats from "../components/logss/AuditStats";
 import AuditToolbar from "../components/logss/AuditToolbar";
@@ -16,20 +16,21 @@ const [loading, setLoading] = useState(true);
   try {
     setLoading(true);
 
-    useEffect(() => {
-  loadLogs();
-}, []);
-
     const response = await backlogApi.getAll();
 
-    setLogs(response.data || []);
+    console.log(response);
 
+    setLogs(response.data.data);
   } catch (err) {
     console.error("Failed to load logs:", err);
   } finally {
     setLoading(false);
   }
 };
+
+useEffect(() => {
+  loadLogs();
+}, []);
 
   const filteredLogs = useMemo(() => {
 
