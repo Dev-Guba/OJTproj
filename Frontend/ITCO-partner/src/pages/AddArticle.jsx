@@ -179,31 +179,28 @@ export default function AddArticle() {
   };
 
   const handleArticleChange = (e) => {
-    console.log("ARTICLE EVENT:", e);
+    const articleId = e.target.value;
 
-  const articleId = e.target.value;
-
-  console.log("ARTICLES:", articles);
+  setSelectedArticle(articleId);   // <-- ADD THIS
 
   const match = articles.find(
     (item) => String(item.ArticleId) === String(articleId)
   );
 
-  console.log("MATCH:", match);
-    if (!match) return;
+  if (!match) return;
 
-    setForm((prev) => ({
-      ...prev,
-      article: match.article ?? "",
-      description: match.description ?? "",
-      propNumber: match.propNumber ?? "",
-      dateAcquired: match.dateAcquired ?? "",
-      unit: match.unit ?? "",
-      unitValue: match.unitValue == null ? "" : String(match.unitValue),
-      balQty: match.balQty == null ? "" : String(match.balQty),
-      balValue: match.balValue == null ? "" : String(match.balValue),
-    }));
-  };
+  setForm((prev) => ({
+    ...prev,
+    article: match.article ?? "",
+    description: match.description ?? "",
+    propNumber: match.propNumber ?? "",
+    dateAcquired: match.dateAcquired ?? "",
+    unit: match.unit ?? "",
+    unitValue: match.unitValue == null ? "" : String(match.unitValue),
+    balQty: match.balQty == null ? "" : String(match.balQty),
+    balValue: match.balValue == null ? "" : String(match.balValue),
+  }));
+};
 
   const validate = () => {
     if (!(form.article || "").trim()) return "Article is required.";
