@@ -116,6 +116,8 @@ export default function AddArticle() {
       if (matchedArticle) {
         setSelectedArticle(String(matchedArticle.ArticleId));
       }
+    setSelectedEmployeeId(String(item.employee_id));
+    setSelectedArticle(String(item.article_id));
     } catch {
       toast.error("Failed to load record.");
       navigate("/dashboard/view");
@@ -129,10 +131,6 @@ export default function AddArticle() {
   useEffect(() => {
     loadArticles();
   }, []);
-
-  useEffect(() => {
-  console.log("selectedArticle:", selectedArticle);
-}, [selectedArticle]);
 
   useEffect(() => {
     if (!editId && isAdmin && user?.SameDeptCode) {
@@ -165,6 +163,10 @@ export default function AddArticle() {
     }));
   }, [articles]);
 
+  useEffect(() => {
+  console.log(articleOptions);
+}, [articleOptions]);
+
   const handleEmployeeChange = (e) => {
     const employeeId = e.target.value;
     setSelectedEmployeeId(employeeId);
@@ -185,16 +187,19 @@ export default function AddArticle() {
   const handleArticleChange = (e) => {
     const articleId = e.target.value;
 
-  setSelectedArticle(articleId);   // <-- ADD THIS
-  console.log("Selected Article ID:", articleId);   // <-- ADD THIS
+  console.log("Selected:", articleId);
 
   const match = articles.find(
     (item) => String(item.ArticleId) === String(articleId)
   );
 
-  if (!match) return;
-  console.log(selectedArticle);
-  console.log(selectedEmployeeId);
+  if(!match) return;
+
+  console.log("Match:", match);
+
+  setSelectedArticle(String(match.ArticleId));
+
+  console.log("Check: ",selectedArticle);
 
   setForm((prev) => ({
     ...prev,
@@ -203,9 +208,9 @@ export default function AddArticle() {
     propNumber: match.propNumber ?? "",
     dateAcquired: match.dateAcquired ?? "",
     unit: match.unit ?? "",
-    unitValue: match.unitValue == null ? "" : String(match.unitValue),
-    balQty: match.balQty == null ? "" : String(match.balQty),
-    balValue: match.balValue == null ? "" : String(match.balValue),
+    unitValue: match.unitValue == null ? "" : Number(match.unitValue),
+    balQty: match.balQty == null ? "" : Number(match.balQty),
+    balValue: match.balValue == null ? "" : Number(match.balValue),
   }));
 };
 
@@ -252,6 +257,14 @@ export default function AddArticle() {
   areMeNo: (form.areMeNo || "").trim(),
   status: "ISSUED",
   issuedDate: today,
+
+  description: form.description || null,
+  propNumber: form.propNumber || null,
+  dateAcquired: form.dateAcquired || null,
+  unit: form.unit || null,
+  unitValue: form.unitValue !== "" ? Number(form.unitValue) : null,
+  balQty: form.balQty !== "" ? Number(form.balQty) : null,
+  balValue: form.balValue !== "" ? Number(form.balValue) : null,
 };
 
   console.log("payload being sent:", payload);
@@ -278,6 +291,9 @@ export default function AddArticle() {
     setLoading(false);
   }
 };
+useEffect(() => {
+  console.log("selectedArticle changed:", selectedArticle);
+}, [selectedArticle]);
 
   return (
     <div className="max-w-4xl">

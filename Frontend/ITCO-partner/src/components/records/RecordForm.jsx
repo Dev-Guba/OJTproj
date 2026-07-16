@@ -86,28 +86,35 @@ export default function RecordForm({
               Article
             </label>
 
-
             <SearchCombobox
               options={articleOptions}
               value={selectedArticleId}
               onChange={onArticleChange}
-              disabled={loadingArticles}
+              disabled={editMode || loadingArticles}
               loading={loadingArticles}
               placeholder={
-                loadingArticles
+                editMode
+                  ? "Article cannot be changed"
+                  : loadingArticles
                   ? "Loading articles..."
                   : "Search article..."
               }
               emptyMessage="No articles found."
-              
             />
-              <div className="mt-3">
-  <Input
-    label="Selected Article"
-    value={form.article ?? ""}
-    readOnly
-  />
-</div>
+
+            {editMode && (
+              <p className="mt-1.5 text-xs text-slate-400">
+                Article cannot be changed once a record is created.
+              </p>
+            )}
+
+            <div className="mt-3">
+              <Input
+                label="Selected Article"
+                value={form.article ?? ""}
+                readOnly
+              />
+            </div>
 
           </div>
 

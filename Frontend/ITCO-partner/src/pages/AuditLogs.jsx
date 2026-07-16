@@ -4,71 +4,77 @@ import backlogApi from "../api/backlog.api.js";
 import AuditStats from "../components/logss/AuditStats";
 import AuditToolbar from "../components/logss/AuditToolbar";
 import AuditTable from "../components/logss/AuditTable";
+import TransferDetailModal from "../components/logss/TransferDetailModal";
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedLog, setSelectedLog] = useState(null);
 
   const loadLogs = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const response = await backlogApi.getAll();
+      const response = await backlogApi.getAll();
 
-    console.log("Response:", response);
+      console.log("Response:", response);
 
-    const rawLogs = response.data.data || [];
+      const rawLogs = response.data.data || [];
 
-    const formattedLogs = rawLogs.map((log) => {
-      // Try both possible locations
-      const employee = log.Employee || log.ICTORecord?.Employee;
+      const formattedLogs = rawLogs.map((log) => {
+        const performedBy = log.PerformedBy;
+        const article = log.ICTORecord?.Article;
+        const office = log.ICTORecord?.office;
 
-      return {
-        id: log.tracking_id,
+        const formatName = (person) =>
+          person
+            ? `${person.FirstName || ""} ${person.LastName || ""}`.trim()
+            : null;
 
-        time: new Date(log.createdAt).toLocaleString(),
+        return {
+          id: log.tracking_id,
 
-        user: employee
-          ? `${employee.FirstName || ""} ${employee.LastName || ""}`.trim()
-          : "Unknown User",
+          createdAt: log.createdAt, // <-- ADD THIS
 
-        role:
-          employee?.role_id === 1
-            ? "Super Admin"
-            : employee?.role_id === 2
-            ? "Admin"
-            : employee
-            ? "Employee"
-            : "-",
+          time: new Date(log.createdAt).toLocaleString(),
 
-        module: "Records",
+          user: performedBy
+            ? `${performedBy.FirstName || ""} ${performedBy.LastName || ""}`.trim()
+            : "Unknown User",
 
-        activity: log.Article
-          ? `${log.status} - ${log.Article.article}`
-          : log.status,
+          role: performedBy ? "Employee" : "-",
 
-        office:
-          log.ICTORecord?.office ||
-          employee?.SameDeptCode ||
-          "-",
+          module: "Records",
 
-        action:
-          log.status === "Created"
-            ? "CREATE"
-            : log.status === "TRANSFERRED"
-            ? "UPDATE"
-            : log.status.toUpperCase(),
-      };
-    });
+          activity:
+            log.remarks ||
+            (article ? `${log.action} - ${article.article}` : log.action),
 
-    setLogs(formattedLogs);
-  } catch (err) {
-    console.error("Failed to load logs:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+          office: office || "-",
+
+          action:
+            log.action === "CREATED"
+              ? "CREATE"
+              : log.action === "TRANSFERRED"
+              ? "UPDATE"
+              : (log.action || "-").toUpperCase(),
+
+          // Extra detail only meaningful for transfers, used by the modal
+          previousOwner: formatName(log.PreviousOwner),
+          newOwner: formatName(log.NewOwner),
+          articleName: article?.article || "-",
+          propNumber: article?.propNumber || "-",
+        };
+      });
+
+      setLogs(formattedLogs);
+    } catch (err) {
+      console.error("Failed to load logs:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadLogs();
@@ -92,9 +98,7 @@ export default function AuditLogs() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-800">
-          Audit Logs
-        </h1>
+        <h1 className="text-3xl font-bold text-slate-800">Audit Logs</h1>
 
         <p className="mt-2 text-slate-500">
           Monitor all user activities performed throughout the system.
@@ -103,14 +107,17 @@ export default function AuditLogs() {
 
       <AuditStats logs={logs} />
 
-      <AuditToolbar
-        search={search}
-        setSearch={setSearch}
-      />
+      <AuditToolbar search={search} setSearch={setSearch} />
 
       <AuditTable
         rows={filteredLogs}
         loading={loading}
+        onView={(log) => setSelectedLog(log)}
+      />
+
+      <TransferDetailModal
+        log={selectedLog}
+        onClose={() => setSelectedLog(null)}
       />
     </div>
   );

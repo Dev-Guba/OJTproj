@@ -531,7 +531,7 @@ export async function updateRecord(id, data, user) {
         previousEmployeeId,
         newEmployeeId: updatedRecord.employee_id,
         performedBy: user.EmployeeId,
-        action: "TRANSFER",
+        action: "TRANSFERRED",
         remarks: `Transferred ${article.article} from ${previousEmployee.FirstName} ${previousEmployee.LastName} to ${newEmployee.FirstName} ${newEmployee.LastName}`,
       },
       transaction
