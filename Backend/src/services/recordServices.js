@@ -433,12 +433,27 @@ export async function createRecord(data, user) {
     const record = await Record.create(payload, {
       transaction,
     });
-    
+    console.log(user);
+    console.log("EmployeeId:", user.EmployeeId);
+    console.log("employeeId:", user.employeeId);
     await createForRecord(
-      record.id,
-      "Created",
-      transaction
-    );
+  {
+    recordId: record.id,
+
+    articleId: record.article_id,
+
+    previousEmployeeId: null,
+
+    newEmployeeId: record.employee_id,
+
+    performedBy: user.employeeId,
+
+    action: "CREATED",
+
+    remarks: `Assigned ${article.article} to ${employee.FirstName} ${employee.LastName}`,
+  },
+  transaction
+);
 
     const newQty = qty - 1;
 
@@ -479,6 +494,9 @@ export async function updateRecord(id, data, user) {
 
     if (!record) return null;
 
+    // Save the old owner before updating
+    const previousEmployeeId = record.employee_id;
+
     const payload = { ...data };
 
     if (user.role_id === ROLES.ADMIN) {
@@ -493,9 +511,29 @@ export async function updateRecord(id, data, user) {
       transaction,
     });
 
+    // Get the employees for the remarks
+    const previousEmployee = await Employee.findByPk(previousEmployeeId, {
+      transaction,
+    });
+
+    const newEmployee = await Employee.findByPk(updatedRecord.employee_id, {
+      transaction,
+    });
+
+    const article = await Article.findByPk(updatedRecord.article_id, {
+      transaction,
+    });
+
     await createForRecord(
-      record.id,
-      "TRANSFERRED",
+      {
+        recordId: updatedRecord.id,
+        articleId: updatedRecord.article_id,
+        previousEmployeeId,
+        newEmployeeId: updatedRecord.employee_id,
+        performedBy: user.EmployeeId,
+        action: "TRANSFER",
+        remarks: `Transferred ${article.article} from ${previousEmployee.FirstName} ${previousEmployee.LastName} to ${newEmployee.FirstName} ${newEmployee.LastName}`,
+      },
       transaction
     );
 

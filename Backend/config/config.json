@@ -1,23 +1,23 @@
 {
   "development": {
     "username": "sa",
-    "password": "23270044",
-    "database": "CapitolDB",
-    "host": "DESKTOP-L6S4NDD",
+    "password": "123456789",
+    "database": "ICTO_DB",
+    "host": "LAPTOP-KRJTDJ8F",
     "dialect": "mssql"
   },
   "test": {
     "username": "sa",
-    "password": "23270044",
-    "database": "CapitolDB",
-    "host": "DESKTOP-L6S4NDD",
+    "password": "123456789",
+    "database": "ICTO_DB",
+    "host": "LAPTOP-KRJTDJ8F",
     "dialect": "mssql"
   },
   "production": {
     "username": "sa",
-    "password": "23270044",
-    "database": "CapitolDB",
-    "host": "DESKTOP-L6S4NDD",
+    "password": "123456789",
+    "database": "ICTO_DB",
+    "host": "LAPTOP-KRJTDJ8F",
     "dialect": "mssql"
   }
 }

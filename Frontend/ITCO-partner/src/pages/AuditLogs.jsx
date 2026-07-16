@@ -6,10 +6,8 @@ import AuditToolbar from "../components/logss/AuditToolbar";
 import AuditTable from "../components/logss/AuditTable";
 
 export default function AuditLogs() {
-
-const [logs, setLogs] = useState([]);
-const [loading, setLoading] = useState(true);
-
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const loadLogs = async () => {
@@ -18,9 +16,53 @@ const [loading, setLoading] = useState(true);
 
     const response = await backlogApi.getAll();
 
-    console.log(response);
+    console.log("Response:", response);
 
-    setLogs(response.data.data);
+    const rawLogs = response.data.data || [];
+
+    const formattedLogs = rawLogs.map((log) => {
+      // Try both possible locations
+      const employee = log.Employee || log.ICTORecord?.Employee;
+
+      return {
+        id: log.tracking_id,
+
+        time: new Date(log.createdAt).toLocaleString(),
+
+        user: employee
+          ? `${employee.FirstName || ""} ${employee.LastName || ""}`.trim()
+          : "Unknown User",
+
+        role:
+          employee?.role_id === 1
+            ? "Super Admin"
+            : employee?.role_id === 2
+            ? "Admin"
+            : employee
+            ? "Employee"
+            : "-",
+
+        module: "Records",
+
+        activity: log.Article
+          ? `${log.status} - ${log.Article.article}`
+          : log.status,
+
+        office:
+          log.ICTORecord?.office ||
+          employee?.SameDeptCode ||
+          "-",
+
+        action:
+          log.status === "Created"
+            ? "CREATE"
+            : log.status === "TRANSFERRED"
+            ? "UPDATE"
+            : log.status.toUpperCase(),
+      };
+    });
+
+    setLogs(formattedLogs);
   } catch (err) {
     console.error("Failed to load logs:", err);
   } finally {
@@ -28,31 +70,28 @@ const [loading, setLoading] = useState(true);
   }
 };
 
-useEffect(() => {
-  loadLogs();
-}, []);
+  useEffect(() => {
+    loadLogs();
+  }, []);
 
   const filteredLogs = useMemo(() => {
-
     if (!search.trim()) return logs;
 
     const keyword = search.toLowerCase();
 
-    return logs.filter(log =>
-      log.user.toLowerCase().includes(keyword) ||
-      log.module.toLowerCase().includes(keyword) ||
-      log.activity.toLowerCase().includes(keyword) ||
-      log.office.toLowerCase().includes(keyword)
+    return logs.filter(
+      (log) =>
+        (log.user ?? "").toLowerCase().includes(keyword) ||
+        (log.module ?? "").toLowerCase().includes(keyword) ||
+        (log.activity ?? "").toLowerCase().includes(keyword) ||
+        (log.office ?? "").toLowerCase().includes(keyword) ||
+        (log.action ?? "").toLowerCase().includes(keyword)
     );
-
   }, [logs, search]);
 
   return (
-
     <div className="space-y-6">
-
       <div>
-
         <h1 className="text-3xl font-bold text-slate-800">
           Audit Logs
         </h1>
@@ -60,7 +99,6 @@ useEffect(() => {
         <p className="mt-2 text-slate-500">
           Monitor all user activities performed throughout the system.
         </p>
-
       </div>
 
       <AuditStats logs={logs} />
@@ -70,13 +108,10 @@ useEffect(() => {
         setSearch={setSearch}
       />
 
-<AuditTable
-  rows={filteredLogs}
-  loading={loading}
-/>
-
+      <AuditTable
+        rows={filteredLogs}
+        loading={loading}
+      />
     </div>
-
   );
-
 }

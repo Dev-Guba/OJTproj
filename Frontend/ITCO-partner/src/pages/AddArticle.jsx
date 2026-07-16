@@ -89,9 +89,9 @@ export default function AddArticle() {
         propNumber: item.propNumber ?? "",
         dateAcquired: item.dateAcquired ?? "",
         unit: item.unit ?? "",
-        unitValue: item.unitValue == null ? "" : String(item.unitValue),
-        balQty: item.balQty == null ? "" : String(item.balQty),
-        balValue: item.balValue == null ? "" : String(item.balValue),
+        unitValue: item.unitValue == null ? "" : Number(item.unitValue).toFixed(2),
+        balQty: item.balQty == null ? "" : Number(item.balQty).toFixed(2),
+        balValue: item.balValue == null ? "" : Number(item.balValue).toFixed(2),
         accountableOfficer: item.accountableOfficer ?? "",
         areMeNo: item.areMeNo ?? "",
         office: item.office ?? "",
@@ -129,6 +129,10 @@ export default function AddArticle() {
   useEffect(() => {
     loadArticles();
   }, []);
+
+  useEffect(() => {
+  console.log("selectedArticle:", selectedArticle);
+}, [selectedArticle]);
 
   useEffect(() => {
     if (!editId && isAdmin && user?.SameDeptCode) {
@@ -182,12 +186,15 @@ export default function AddArticle() {
     const articleId = e.target.value;
 
   setSelectedArticle(articleId);   // <-- ADD THIS
+  console.log("Selected Article ID:", articleId);   // <-- ADD THIS
 
   const match = articles.find(
     (item) => String(item.ArticleId) === String(articleId)
   );
 
   if (!match) return;
+  console.log(selectedArticle);
+  console.log(selectedEmployeeId);
 
   setForm((prev) => ({
     ...prev,
@@ -226,6 +233,7 @@ export default function AddArticle() {
   };
 
   const onSubmit = async (e) => {
+    console.log("Submitting form:", e);
   e.preventDefault();
 
   const err = validate();
