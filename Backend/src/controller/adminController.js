@@ -41,6 +41,7 @@ export async function login(req, res) {
     }
 
     const payload = {
+      employeeId: admin.EmployeeId,
       userId: admin.EmployeeId,
       roleId: admin.role_id,
       employeeNo: admin.EmployeeNo,

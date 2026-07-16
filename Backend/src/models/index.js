@@ -79,13 +79,29 @@ Record.belongsTo(Article, {
 // Record ↔ Backlog
 // ======================
 
-Record.hasMany(Backlog, {
-  foreignKey: "records_id",
+Backlog.belongsTo(Employee, {
+  foreignKey: "previous_employee_id",
+  as: "PreviousOwner",
+});
+
+Backlog.belongsTo(Employee, {
+  foreignKey: "new_employee_id",
+  as: "NewOwner",
+});
+
+Backlog.belongsTo(Employee, {
+  foreignKey: "performed_by",
+  as: "PerformedBy",
+});
+
+Backlog.belongsTo(Article, {
+  foreignKey: "article_id",
 });
 
 Backlog.belongsTo(Record, {
   foreignKey: "records_id",
 });
+
 
 // Export
 export {

@@ -10,6 +10,10 @@ export async function handleGetAllBacklogs(req,res){
             data: response
         });
     } catch (error) {
-        
+        console.error("handleGetAllBacklogs error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch backlogs",
+        });
     }
 }

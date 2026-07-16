@@ -52,6 +52,7 @@ export async function handleRecords(req, res) {
 export async function handleCreateRecords(req,res){
   try {
     const data = req.body;
+    console.log("REQ.USER:", req.user);
     console.log(data);
     const result = await createRecord(data, req.user);
     console.log(result);
@@ -72,6 +73,7 @@ export async function handleCreateRecords(req,res){
 
 export async function handleUpdateRecords(req,res){
   try {
+    console.log("REQ.USER:", req.user);
     const id = (Number(req.params.id));
     const existing = await getRecordById(id, req.user);
 
