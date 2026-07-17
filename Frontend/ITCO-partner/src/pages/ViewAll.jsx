@@ -125,23 +125,90 @@ export default function ViewAll() {
         includeHeader: reportIncludeHeader,
         includePageNumbers: reportIncludePageNumbers,
       });
-      const blob = new Blob([res.data], { type: "application/pdf" });
-      const cd = res.headers?.["content-disposition"] || "";
-      const match = cd.match(/filename="(.+?)"/);
-      const filename = match?.[1] || "ICTO-Records-Report.pdf";
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+const blob = res.data;
+
+const contentDisposition =
+  res.headers?.["content-disposition"] || "";
+
+const match = contentDisposition.match(
+  /filename="?([^"]+)"?/
+);
+
+const filename =
+  match?.[1] ??
+  `ICTO-Records-Report-${new Date()
+    .toISOString()
+    .slice(0, 10)}.pdf`;
+
+const url = window.URL.createObjectURL(blob);
+
+const link = document.createElement("a");
+
+link.href = url;
+link.download = filename;
+
+document.body.appendChild(link);
+
+link.click();
+
+document.body.removeChild(link);
+
+window.URL.revokeObjectURL(url);
       toast.success("Report downloaded.", { id: t });
     } catch {
       toast.error("Failed to generate report.", { id: t });
     }
   };
+
+  const onGenerateExcel = async () => {
+  const t = toast.loading("Generating Excel report...");
+
+  try {
+    const res = await recordsApi.generateExcel({
+      search: debouncedSearch,
+      office: officeFilter,
+    });
+
+    const blob = res.data;
+
+    const contentDisposition =
+      res.headers?.["content-disposition"] || "";
+
+    const match = contentDisposition.match(
+      /filename="?([^"]+)"?/
+    );
+
+    const filename =
+      match?.[1] ??
+      `ICTO-Records-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`;
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(url);
+
+    toast.success("Excel downloaded.", { id: t });
+
+  } catch (err) {
+
+    console.error(err);
+
+    toast.error("Failed to generate Excel.", { id: t });
+
+  }
+};
 
   return (
     <div className="space-y-4">
@@ -203,15 +270,18 @@ setReportFormat={setReportFormat}
         reportIncludeHeader={reportIncludeHeader}
         reportIncludePageNumbers={reportIncludePageNumbers}
         onClose={() => setReportOpen(false)}
-        onConfirm={async () => {
-    setReportOpen(false);
+onConfirm={async () => {
+  try {
+if (reportFormat === "pdf") {
+  await onGenerateReport();
+} else {
+  await onGenerateExcel();
+}
 
-    if (reportFormat === "pdf") {
-        await onGenerateReport();
-    } else {
-        // Excel export
-        console.log("Export Excel");
-    }
+    setReportOpen(false);
+  } catch (err) {
+    console.error(err);
+  }
 }}
         setReportPaper={setReportPaper}
         setReportPerPage={setReportPerPage}

@@ -609,32 +609,70 @@ export async function generateRecordsReportPdf(req, res) {
       ];
     }
 
-    const records = await Record.findAll({
-      where,
-      include: [
-        {
-          model: Employee,
-          attributes: ["FirstName", "LastName"],
-        },
-      ],
-      order: [
-        ["office", "ASC"],
-        [col("Employee.FirstName"), "ASC"],
-        [col("Employee.LastName"), "ASC"],
-        ["article", "ASC"],
-        ["createdAt", "DESC"],
-      ],
-    });
+const records = await Record.findAll({
+  where,
 
-    // Compute accountableOfficer the same way getAllRecords does
+  include: [
+    {
+      model: Employee,
+      attributes: [
+        "FirstName",
+        "LastName",
+      ],
+      required: false,
+    },
+
+    {
+      model: Article,
+      required: false,
+    },
+  ],
+
+  order: [
+    ["office", "ASC"],
+
+    [Employee, "FirstName", "ASC"],
+
+    [Employee, "LastName", "ASC"],
+
+    [Article, "article", "ASC"],
+
+    ["createdAt", "DESC"],
+  ],
+});
+
     const rows = records.map((record) => {
       const r = record.toJSON();
-      return {
-        ...r,
-        accountableOfficer: `${r.Employee?.FirstName || ""} ${
-          r.Employee?.LastName || ""
-        }`.trim(),
-      };
+return {
+  article: r.Article?.article ?? "",
+
+  description: r.Article?.description ?? "",
+
+  propNumber: r.Article?.propNumber ?? "",
+
+  dateAcquired: r.Article?.dateAcquired ?? "",
+
+  unit: r.Article?.unit ?? "",
+
+  unitValue: r.Article?.unitValue ?? "",
+
+  balQty: r.Article?.balQty ?? "",
+
+  balValue: r.Article?.balValue ?? "",
+
+  areMeNo: r.areMeNo,
+
+  office: r.office,
+
+  status: r.status,
+
+  issuedDate: r.issuedDate,
+
+  returnedDate: r.returnedDate,
+
+  accountableOfficer:
+    `${r.Employee?.FirstName ?? ""} ${r.Employee?.LastName ?? ""}`.trim(),
+};
     });
 
     const assetsDir = path.join(__dirname, "..", "assets");
@@ -702,13 +740,332 @@ const pdfOptions = {
 }
 
 export async function generateRecordsReportExcel(req, res) {
-  try {
+  try { 
+    const search = String(req.body?.search ?? "").trim();
+    const office = String(req.body?.office ?? "All").trim();
+
+    if (!req.user) {
+      throw new Error("Authenticated user not found.");
+    }
+
+    const where = await buildRecordScopeWhere(req.user);
+
+    // Super Admin office filter
+    if (
+      req.user.role_id === ROLES.SUPER_ADMIN &&
+      office !== "All"
+    ) {
+      where.office = office;
+    }
+
+    // Search filter
+    if (search) {
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        {
+          [Op.or]: [
+            { areMeNo: { [Op.like]: `%${search}%` } },
+            { office: { [Op.like]: `%${search}%` } },
+
+            {
+              "$Article.article$": {
+                [Op.like]: `%${search}%`,
+              },
+            },
+
+            {
+              "$Article.description$": {
+                [Op.like]: `%${search}%`,
+              },
+            },
+
+            {
+              "$Article.propNumber$": {
+                [Op.like]: `%${search}%`,
+              },
+            },
+
+            sequelizeWhere(
+              fn(
+                "CONCAT",
+                col("Employee.FirstName"),
+                " ",
+                col("Employee.LastName")
+              ),
+              {
+                [Op.like]: `%${search}%`,
+              }
+            ),
+          ],
+        },
+      ];
+    }
+
+    const records = await Record.findAll({
+      where,
+
+      include: [
+        {
+          model: Employee,
+          attributes: [
+            "FirstName",
+            "LastName",
+          ],
+        },
+
+        {
+          model: Article,
+        },
+      ],
+
+      order: [
+        ["office", "ASC"],
+        ["createdAt", "DESC"],
+      ],
+    });
 
     const workbook = new ExcelJS.Workbook();
 
-    const worksheet = workbook.addWorksheet("ICTO Records");
+    workbook.creator = "ICTO Records System";
+    workbook.created = new Date();
 
-    worksheet.addRow(["Hello"]);
+    const worksheet =
+      workbook.addWorksheet("ICTO Records");
+
+      const assetsDir = path.join(__dirname, "..", "assets");
+
+const officialSealPath = path.join(
+  assetsDir,
+  "Official_seal.png"
+);
+
+const bagongPilipinasPath = path.join(
+  assetsDir,
+  "bagong-pilipinas-logo.png"
+);
+
+const officialSealId = workbook.addImage({
+  filename: officialSealPath,
+  extension: "png",
+});
+
+const bagongPilipinasId = workbook.addImage({
+  filename: bagongPilipinasPath,
+  extension: "png",
+});
+
+worksheet.addImage(officialSealId, {
+  tl: { col: 0, row: 0 },
+  ext: { width: 70, height: 70 },
+});
+
+worksheet.addImage(bagongPilipinasId, {
+  tl: { col: 10, row: 0 },
+  ext: { width: 70, height: 70 },
+});
+
+      // ======================================================
+// Government Header
+// ======================================================
+
+worksheet.mergeCells("A1:K1");
+worksheet.mergeCells("A2:K2");
+worksheet.mergeCells("A3:K3");
+worksheet.mergeCells("A4:K4");
+worksheet.mergeCells("A5:K5");
+worksheet.mergeCells("A6:K6");
+worksheet.mergeCells("A7:K7");
+
+worksheet.getCell("A1").value =
+  "REPUBLIC OF THE PHILIPPINES";
+
+worksheet.getCell("A2").value =
+  "PROVINCE OF CEBU";
+
+worksheet.getCell("A3").value =
+  "PROVINCIAL ADMINISTRATOR'S OFFICE";
+
+worksheet.getCell("A4").value =
+  "2/F East Wing, Provincial Capitol, N. Escario St., Cebu City 6000 Philippines";
+
+worksheet.getCell("A5").value =
+  "Telephone (032) 888-2333 / (032) 888-2328 local 1031 & 1039";
+
+worksheet.getCell("A7").value =
+  "ICTO RECORDS REPORT";
+
+  worksheet.getCell("A8").value =
+  `Generated: ${new Date().toLocaleString()}`;
+
+worksheet.getCell("A9").value =
+  `Office: ${
+    req.user.role_id === ROLES.SUPER_ADMIN
+      ? office
+      : req.user.SameDeptCode
+  }`;
+
+worksheet.getCell("F8").value =
+  `Search: ${search || "All"}`;
+
+worksheet.getCell("F9").value =
+  `Total Records: ${records.length}`;
+
+  ["A8", "A9", "F8", "F9"].forEach((cell) => {
+  worksheet.getCell(cell).font = {
+    bold: true,
+    size: 10,
+  };
+});
+
+  [
+  "A1",
+  "A2",
+  "A3",
+  "A4",
+  "A5",
+  "A7",
+].forEach((cell) => {
+
+  worksheet.getCell(cell).alignment = {
+    horizontal: "center",
+    vertical: "middle",
+  };
+
+});
+
+worksheet.getCell("A1").font = {
+  bold: true,
+  size: 13,
+};
+
+worksheet.getCell("A2").font = {
+  bold: true,
+  size: 12,
+};
+
+worksheet.getCell("A3").font = {
+  bold: true,
+  size: 15,
+};
+
+worksheet.getCell("A4").font = {
+  size: 10,
+};
+
+worksheet.getCell("A5").font = {
+  size: 10,
+};
+
+worksheet.getCell("A7").font = {
+  bold: true,
+  size: 18,
+  color: {
+    argb: "1E3A5F",
+  },
+};
+
+worksheet.getColumn(1).width = 25;
+worksheet.getColumn(2).width = 35;
+worksheet.getColumn(3).width = 20;
+worksheet.getColumn(4).width = 18;
+worksheet.getColumn(5).width = 12;
+worksheet.getColumn(6).width = 15;
+worksheet.getColumn(7).width = 15;
+worksheet.getColumn(8).width = 18;
+worksheet.getColumn(9).width = 30;
+worksheet.getColumn(10).width = 18;
+worksheet.getColumn(11).width = 18;
+
+const headerRow = 10;
+
+worksheet.getRow(headerRow).values = [
+  "Article",
+  "Description",
+  "Property No.",
+  "Date Acquired",
+  "Unit",
+  "Unit Value",
+  "Balance Qty",
+  "Balance Value",
+  "Accountable Officer",
+  "ARE/ME No.",
+  "Office",
+];
+
+const row = worksheet.getRow(headerRow);
+
+row.font = {
+  bold: true,
+  color: {
+    argb: "FFFFFFFF",
+  },
+};
+
+row.alignment = {
+  horizontal: "center",
+  vertical: "middle",
+};
+
+row.height = 22;
+
+row.eachCell((cell) => {
+
+  cell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: {
+      argb: "1E3A5F",
+    },
+  };
+
+  cell.border = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    right: { style: "thin" },
+    bottom: { style: "thin" },
+  };
+
+});
+
+    // Header Style
+    worksheet.getRow(1).font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "1E3A5F" },
+    };
+
+    worksheet.getRow(1).alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+
+    records.forEach((record) => {
+     worksheet.addRow([
+record.Article?.article ?? "",
+record.Article?.description ?? "",
+record.Article?.propNumber ?? "",
+record.Article?.dateAcquired ?? "",
+record.Article?.unit ?? "",
+record.Article?.unitValue ?? "",
+record.Article?.balQty ?? "",
+record.Article?.balValue ?? "",
+`${record.Employee?.FirstName ?? ""} ${record.Employee?.LastName ?? ""}`.trim(),
+record.areMeNo,
+record.office,
+      ]);
+    });
+
+    worksheet.views = [
+      {
+        state: "frozen",
+        ySplit: 1,
+      },
+    ];
 
     res.setHeader(
       "Content-Type",
@@ -726,11 +1083,14 @@ export async function generateRecordsReportExcel(req, res) {
 
   } catch (err) {
 
-    console.error(err);
+    console.error(
+      "Generate Excel error:",
+      err
+    );
 
     res.status(500).json({
-      success:false,
-      message:"Failed to generate excel"
+      success: false,
+      message: "Failed to generate Excel report",
     });
 
   }
