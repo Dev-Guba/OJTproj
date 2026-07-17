@@ -10,6 +10,7 @@ export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [actionFilter, setActionFilter] = useState("All");
   const [selectedLog, setSelectedLog] = useState(null);
 
   const loadLogs = async () => {
@@ -60,7 +61,6 @@ export default function AuditLogs() {
               ? "UPDATE"
               : (log.action || "-").toUpperCase(),
 
-          // Extra detail only meaningful for transfers, used by the modal
           previousOwner: formatName(log.PreviousOwner),
           newOwner: formatName(log.NewOwner),
           articleName: article?.article || "-",
@@ -80,20 +80,24 @@ export default function AuditLogs() {
     loadLogs();
   }, []);
 
-  const filteredLogs = useMemo(() => {
-    if (!search.trim()) return logs;
+const filteredLogs = useMemo(() => {
+  const keyword = search.trim().toLowerCase();
 
-    const keyword = search.toLowerCase();
+  return logs.filter((log) => {
+    const matchesSearch =
+      keyword === "" ||
+      (log.user ?? "").toLowerCase().includes(keyword) ||
+      (log.module ?? "").toLowerCase().includes(keyword) ||
+      (log.activity ?? "").toLowerCase().includes(keyword) ||
+      (log.office ?? "").toLowerCase().includes(keyword) ||
+      (log.action ?? "").toLowerCase().includes(keyword);
 
-    return logs.filter(
-      (log) =>
-        (log.user ?? "").toLowerCase().includes(keyword) ||
-        (log.module ?? "").toLowerCase().includes(keyword) ||
-        (log.activity ?? "").toLowerCase().includes(keyword) ||
-        (log.office ?? "").toLowerCase().includes(keyword) ||
-        (log.action ?? "").toLowerCase().includes(keyword)
-    );
-  }, [logs, search]);
+    const matchesAction =
+      actionFilter === "All" || log.action === actionFilter;
+
+    return matchesSearch && matchesAction;
+  });
+}, [logs, search, actionFilter]);
 
   return (
     <div className="space-y-6">
@@ -107,7 +111,12 @@ export default function AuditLogs() {
 
       <AuditStats logs={logs} />
 
-      <AuditToolbar search={search} setSearch={setSearch} />
+      <AuditToolbar
+  search={search}
+  setSearch={setSearch}
+  actionFilter={actionFilter}
+  setActionFilter={setActionFilter}
+/>
 
       <AuditTable
         rows={filteredLogs}

@@ -11,7 +11,6 @@ export default function AuditToolbar({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
-
         <div className="w-full sm:max-w-sm">
           <Input
             label="Search"
@@ -22,18 +21,17 @@ export default function AuditToolbar({
         </div>
 
         <div className="w-full sm:w-48">
-          <Select
-            label="Activity"
-            value={actionFilter}
-            onChange={(e) => setActionFilter(e.target.value)}
-          >
-            <option>All</option>
-            <option>CREATE</option>
-            <option>UPDATE</option>
-            <option>DELETE</option>
-            <option>LOGIN</option>
-            <option>LOGOUT</option>
-          </Select>
+<Select
+  label="Activity"
+  value={actionFilter}
+  onChange={(e) => setActionFilter(e.target.value)}
+>
+  <option>All</option>
+  <option>CREATE</option>
+  <option>UPDATE</option>
+  <option>RETURNED</option>
+  <option>DELETED</option>
+</Select>
         </div>
 
       </div>
