@@ -221,7 +221,6 @@ export default function OfficeDetailsPage() {
           setEditTarget(null);
           setEditForm({ firstName: "", lastName: "", email: "", password: "" });
         }}
-        onConfirm={handleEditEmployee}
         onChange={setEditField}
       />
     </div>

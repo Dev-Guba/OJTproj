@@ -439,17 +439,11 @@ export async function createRecord(data, user) {
     await createForRecord(
   {
     recordId: record.id,
-
     articleId: record.article_id,
-
     previousEmployeeId: null,
-
     newEmployeeId: record.employee_id,
-
     performedBy: user.employeeId,
-
     action: "CREATED",
-
     remarks: `Assigned ${article.article} to ${employee.FirstName} ${employee.LastName}`,
   },
   transaction

@@ -91,17 +91,17 @@ export default function Modal({
             disabled={disabled}
             className="w-full sm:w-auto"
           >
-            Cancel
+            Exit
           </Button>
 
-          <Button
+          {/* <Button
             variant={confirmVariant}
             onClick={onConfirm}
             loading={disabled}
             className="w-full sm:w-auto"
           >
             {confirmText}
-          </Button>
+          </Button> */}
         </div>
       </div>
     </div>

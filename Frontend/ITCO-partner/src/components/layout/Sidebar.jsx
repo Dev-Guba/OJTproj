@@ -224,14 +224,14 @@ export default function Sidebar({ open = false, onClose }) {
                 )}
               </div>
             )}
-{isSuperAdmin && (
+ 
             <NavItem
   to="/dashboard/assets"
   label="Assets"
   icon={<IconAssets className="h-4.5 w-4.5" />}
   onClick={closeMobile}
 />
-)}
+
 {isSuperAdmin && (
   <NavItem
     to="/dashboard/audit-logs"
