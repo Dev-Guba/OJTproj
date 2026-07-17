@@ -609,32 +609,70 @@ export async function generateRecordsReportPdf(req, res) {
       ];
     }
 
-    const records = await Record.findAll({
-      where,
-      include: [
-        {
-          model: Employee,
-          attributes: ["FirstName", "LastName"],
-        },
-      ],
-      order: [
-        ["office", "ASC"],
-        [col("Employee.FirstName"), "ASC"],
-        [col("Employee.LastName"), "ASC"],
-        ["article", "ASC"],
-        ["createdAt", "DESC"],
-      ],
-    });
+const records = await Record.findAll({
+  where,
 
-    // Compute accountableOfficer the same way getAllRecords does
+  include: [
+    {
+      model: Employee,
+      attributes: [
+        "FirstName",
+        "LastName",
+      ],
+      required: false,
+    },
+
+    {
+      model: Article,
+      required: false,
+    },
+  ],
+
+  order: [
+    ["office", "ASC"],
+
+    [Employee, "FirstName", "ASC"],
+
+    [Employee, "LastName", "ASC"],
+
+    [Article, "article", "ASC"],
+
+    ["createdAt", "DESC"],
+  ],
+});
+
     const rows = records.map((record) => {
       const r = record.toJSON();
-      return {
-        ...r,
-        accountableOfficer: `${r.Employee?.FirstName || ""} ${
-          r.Employee?.LastName || ""
-        }`.trim(),
-      };
+return {
+  article: r.Article?.article ?? "",
+
+  description: r.Article?.description ?? "",
+
+  propNumber: r.Article?.propNumber ?? "",
+
+  dateAcquired: r.Article?.dateAcquired ?? "",
+
+  unit: r.Article?.unit ?? "",
+
+  unitValue: r.Article?.unitValue ?? "",
+
+  balQty: r.Article?.balQty ?? "",
+
+  balValue: r.Article?.balValue ?? "",
+
+  areMeNo: r.areMeNo,
+
+  office: r.office,
+
+  status: r.status,
+
+  issuedDate: r.issuedDate,
+
+  returnedDate: r.returnedDate,
+
+  accountableOfficer:
+    `${r.Employee?.FirstName ?? ""} ${r.Employee?.LastName ?? ""}`.trim(),
+};
     });
 
     const assetsDir = path.join(__dirname, "..", "assets");
@@ -703,12 +741,157 @@ const pdfOptions = {
 
 export async function generateRecordsReportExcel(req, res) {
   try {
+    const search = String(req.body?.search ?? "").trim();
+    const office = String(req.body?.office ?? "All").trim();
+
+    if (!req.user) {
+      throw new Error("Authenticated user not found.");
+    }
+
+    const where = await buildRecordScopeWhere(req.user);
+
+    // Super Admin office filter
+    if (
+      req.user.role_id === ROLES.SUPER_ADMIN &&
+      office !== "All"
+    ) {
+      where.office = office;
+    }
+
+    // Search filter
+    if (search) {
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        {
+          [Op.or]: [
+            { areMeNo: { [Op.like]: `%${search}%` } },
+            { office: { [Op.like]: `%${search}%` } },
+
+            {
+              "$Article.article$": {
+                [Op.like]: `%${search}%`,
+              },
+            },
+
+            {
+              "$Article.description$": {
+                [Op.like]: `%${search}%`,
+              },
+            },
+
+            {
+              "$Article.propNumber$": {
+                [Op.like]: `%${search}%`,
+              },
+            },
+
+            sequelizeWhere(
+              fn(
+                "CONCAT",
+                col("Employee.FirstName"),
+                " ",
+                col("Employee.LastName")
+              ),
+              {
+                [Op.like]: `%${search}%`,
+              }
+            ),
+          ],
+        },
+      ];
+    }
+
+    const records = await Record.findAll({
+      where,
+
+      include: [
+        {
+          model: Employee,
+          attributes: [
+            "FirstName",
+            "LastName",
+          ],
+        },
+
+        {
+          model: Article,
+        },
+      ],
+
+      order: [
+        ["office", "ASC"],
+        ["createdAt", "DESC"],
+      ],
+    });
 
     const workbook = new ExcelJS.Workbook();
 
-    const worksheet = workbook.addWorksheet("ICTO Records");
+    workbook.creator = "ICTO Records System";
+    workbook.created = new Date();
 
-    worksheet.addRow(["Hello"]);
+    const worksheet =
+      workbook.addWorksheet("ICTO Records");
+
+    worksheet.columns = [
+      { header: "Article", key: "article", width: 25 },
+      { header: "Description", key: "description", width: 30 },
+      { header: "Property No.", key: "propNumber", width: 20 },
+      { header: "Date Acquired", key: "dateAcquired", width: 18 },
+      { header: "Unit", key: "unit", width: 12 },
+      { header: "Unit Value", key: "unitValue", width: 15 },
+      { header: "Balance Qty", key: "balQty", width: 15 },
+      { header: "Balance Value", key: "balValue", width: 18 },
+      { header: "Accountable Officer", key: "officer", width: 28 },
+      { header: "ARE/ME No.", key: "areMeNo", width: 18 },
+      { header: "Office", key: "office", width: 18 },
+    ];
+
+    // Header Style
+    worksheet.getRow(1).font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "1E3A5F" },
+    };
+
+    worksheet.getRow(1).alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+
+    records.forEach((record) => {
+      worksheet.addRow({
+        article: record.Article?.article ?? "",
+        description:
+          record.Article?.description ?? "",
+        propNumber:
+          record.Article?.propNumber ?? "",
+        dateAcquired:
+          record.Article?.dateAcquired ?? "",
+        unit: record.Article?.unit ?? "",
+        unitValue:
+          record.Article?.unitValue ?? "",
+        balQty:
+          record.Article?.balQty ?? "",
+        balValue:
+          record.Article?.balValue ?? "",
+        officer:
+          `${record.Employee?.FirstName ?? ""} ${record.Employee?.LastName ?? ""}`.trim(),
+        areMeNo: record.areMeNo,
+        office: record.office,
+      });
+    });
+
+    worksheet.views = [
+      {
+        state: "frozen",
+        ySplit: 1,
+      },
+    ];
 
     res.setHeader(
       "Content-Type",
@@ -726,11 +909,14 @@ export async function generateRecordsReportExcel(req, res) {
 
   } catch (err) {
 
-    console.error(err);
+    console.error(
+      "Generate Excel error:",
+      err
+    );
 
     res.status(500).json({
-      success:false,
-      message:"Failed to generate excel"
+      success: false,
+      message: "Failed to generate Excel report",
     });
 
   }
