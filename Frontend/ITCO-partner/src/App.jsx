@@ -12,6 +12,8 @@ import OfficeManagement from "./pages/superadmin/OfficeManagement";
 import OfficeDetailsPage from "./pages/superadmin/OfficeDetailsPage";
 import Assets from "./pages/Assets";
 import AuditLogs from "./pages/AuditLogs";
+import Profile from "./pages/Profile";
+import ChangePassword from "./pages/ChangePassword";
 
 function Protected({ children }) {
   const { user, authReady } = useAuth();
@@ -34,6 +36,8 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="change-password" element={<ChangePassword />} />
         <Route path="add" element={<AddArticle />} />
         <Route path="view" element={<ViewAll />} />
         <Route path="assets" element={<Assets />} />

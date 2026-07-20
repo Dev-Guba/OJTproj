@@ -11,15 +11,15 @@ export default function Dashboard() {
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "there";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
 
       {/* Welcome Banner */}
-      <div className="flex items-center justify-between rounded-2xl bg-[#1e3a5f] px-6 py-5">
+      <div className="flex flex-col gap-4 rounded-2xl bg-[#1e3a5f] p-5 sm:p-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="text-base font-semibold text-white">
+          <div className="text-lg font-semibold text-white sm:text-xl">
             Welcome back, {displayName}!
           </div>
-          <div className="mt-0.5 text-sm text-white/55">
+          <div className="mt-1 text-xs text-white/70 sm:text-sm">
             {new Date().toLocaleDateString("en-PH", {
               weekday: "long",
               year: "numeric",
@@ -28,7 +28,7 @@ export default function Dashboard() {
             })}
           </div>
         </div>
-        <div className="rounded-full border border-amber-400/30 bg-amber-500/20 px-4 py-1.5 text-xs font-semibold text-amber-300">
+        <div className="self-start rounded-full border border-amber-400/30 bg-amber-500/20 px-4 py-2 text-xs font-semibold text-amber-300 md:self-auto">
           {isSuperAdmin ? "Super Admin" : "Admin"} · {user?.officeCode ?? ""}
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function Dashboard() {
       />
 
       {/* Bottom Section */}
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <RecordsByOffice
           loading={loading}
           officeEntries={stats.officeEntries}

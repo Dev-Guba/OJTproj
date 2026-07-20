@@ -134,10 +134,6 @@ const [selectedMasterAsset, setSelectedMasterAsset] = useState(null);
         <h1 className="text-2xl font-bold text-slate-800 sm:text-3xl">
           Assets
         </h1>
-
-        <p className="mt-1 text-sm text-slate-500 sm:mt-2 sm:text-base">
-          View and manage all ICTO property assets.
-        </p>
       </div>
 
       <AssetStats
