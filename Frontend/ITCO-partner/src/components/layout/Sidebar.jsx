@@ -135,6 +135,8 @@ export default function Sidebar({ open = false, onClose }) {
 
   const isSuperAdmin = user?.role_id === ROLES.SUPER_ADMIN;
   const isAdmin = user?.role_id === ROLES.ADMIN;
+  const isPGSO = user?.SameDeptCode === "PGSO";
+  const canAccessAssets = isSuperAdmin || (isAdmin && isPGSO);
   const canManageRecords = isSuperAdmin || isAdmin;
 
   const manageActive = useMemo(
@@ -162,13 +164,13 @@ export default function Sidebar({ open = false, onClose }) {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-50 h-full w-72 shrink-0 bg-[#08204a] px-4 py-5 text-white shadow-xl transition-transform duration-200",
+          "fixed inset-y-0 left-0 z-50 h-full w-[85vw] max-w-[320px] shrink-0 bg-[#08204a] px-4 py-5 text-white shadow-xl transition-transform duration-300 ease-in-out lg:w-80",
           "md:static md:z-auto md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
         <div className="flex h-full flex-col">
-          <div className="mb-5 flex items-center justify-between">
+          <div className="mb-6 flex items-center justify-between">
             <button
               type="button"
               onClick={() => {
@@ -191,7 +193,7 @@ export default function Sidebar({ open = false, onClose }) {
             </button>
           </div>
 
-          <div className="space-y-2 overflow-y-auto">
+          <div className="flex-1 space-y-2.5 overflow-y-auto pr-1">
             <button
               type="button"
               onClick={() => setManageOpen((v) => !v)}
@@ -225,6 +227,7 @@ export default function Sidebar({ open = false, onClose }) {
               </div>
             )}
  
+{canAccessAssets && (
             <NavItem
   to="/dashboard/assets"
   label="Assets"

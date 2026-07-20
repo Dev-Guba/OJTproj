@@ -19,7 +19,7 @@ export default function RecordsByOffice({
       }
     >
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-1.5">
               <div className="h-3 w-32 rounded bg-slate-100" />
@@ -34,11 +34,11 @@ export default function RecordsByOffice({
           <div className="space-y-4">
             {officeEntries.slice(0, 6).map(([office, count]) => (
               <div key={office}>
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <div className="truncate text-sm font-medium text-slate-700">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
                     {office}
                   </div>
-                  <div className="shrink-0 text-xs font-semibold text-slate-400">
+                  <div className="ml-2 shrink-0 text-xs font-semibold text-slate-400">
                     {count}
                   </div>
                 </div>
@@ -54,15 +54,15 @@ export default function RecordsByOffice({
         )
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
             <span className="text-sm font-medium text-amber-800">Missing ARE/ME No.</span>
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
               {missingAre}
             </span>
           </div>
-          <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3">
             <span className="text-sm font-medium text-slate-700">Top Office</span>
-            <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+           <span className="max-w-[45%] truncate rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
               {topOffice}
             </span>
           </div>

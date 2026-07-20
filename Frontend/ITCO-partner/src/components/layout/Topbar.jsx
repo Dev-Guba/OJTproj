@@ -1,7 +1,10 @@
-import { useAuth } from "../../context/AuthContext";
+
 import { useLocation } from "react-router-dom";
+import ProfileDropdown from "./ProfileDropdown";
 
 const titles = [
+  { path: "/dashboard/change-password", title: "Change Password" },
+  { path: "/dashboard/profile", title: "My Profile" },
   { path: "/dashboard/offices/"},
   { path: "/dashboard/offices"},
   { path: "/dashboard/admins",},
@@ -18,12 +21,8 @@ function getHeader(pathname) {
 }
 
 export default function Topbar({ onMenu, right = null }) {
-  const { user } = useAuth();
   const { pathname } = useLocation();
   const header = getHeader(pathname);
-
-  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.email || "User";
-  const initials = (user?.firstName?.[0] || user?.email?.[0] || "U").toUpperCase();
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
@@ -55,18 +54,7 @@ export default function Topbar({ onMenu, right = null }) {
 
         <div className="flex items-center gap-3">
           {right}
-
-          <div className="hidden items-center gap-2.5 rounded-full bg-slate-100 px-3 py-1.5 sm:flex">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-              {initials}
-            </span>
-            <div className="leading-tight">
-              <div className="text-xs font-semibold text-slate-800">{displayName}</div>
-              {user?.firstName && (
-                <div className="text-[11px] text-slate-500">{user?.email}</div>
-              )}
-            </div>
-          </div>
+        <ProfileDropdown />
         </div>
       </div>
     </header>
