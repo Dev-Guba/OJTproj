@@ -227,7 +227,6 @@ export default function Sidebar({ open = false, onClose }) {
               </div>
             )}
  
-{canAccessAssets && (
             <NavItem
   to="/dashboard/assets"
   label="Assets"
@@ -271,20 +270,20 @@ export default function Sidebar({ open = false, onClose }) {
               />
             )}
 
-            <NavItem
+            {/* <NavItem
               to="/dashboard/settings"
               label="Settings"
               icon={<IconSettings className="h-4.5 w-4.5" />}
               onClick={closeMobile}
-            />
+            /> */}
           </div>
           
 
           <div className="mt-auto pt-4">
-            <Button variant="outline-dark" className="w-full justify-start rounded-xl" onClick={logout}>
+            {/* <Button variant="outline-dark" className="w-full justify-start rounded-xl" onClick={logout}>
               <IconLogout className="h-4 w-4" />
               Logout
-            </Button>
+            </Button> */}
           </div>
         </div>
       </aside>

@@ -1,210 +1,274 @@
 'use strict';
-const bcrypt = require('bcrypt');
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+
     const now = new Date();
 
     const hashedPassword =
-      '$2b$10$Fdc3JrH4DEPO1fr9x9yY..h1xSGebjG2EejHKCCDZup4YXDEIGpG6';
+      '$2b$10$Bi.v98laZAvsUcEcX86JqObExs9QkImlFRfC3uOkcCSNotQqEQ4Ki';
 
     const adminHashPassword =
-      '$2b$10$ZjCtWI1H9rsYt3TU9FpEdubgD0AJ9Drh3KifACoEq2JpQ.XswuYf2';
-      const officeMap = [
-  { office_id: 1, code: "ICTO" },
-  { office_id: 2, code: "HR" },
-  { office_id: 3, code: "ACCOUNTING" },
-  { office_id: 4, code: "BUDGET" },
-  { office_id: 5, code: "ENGINEERING" },
-  { office_id: 6, code: "GSO" },
-  { office_id: 7, code: "PESO" },
-  { office_id: 8, code: "TOURISM" },
-];
-    const employees = [
-      // ✅ YOUR EXISTING DATA (unchanged)
-      
-      {
+      '$2b$10$2rU7W6oybEGFu0lyX97L6e8PHxaqNqoFnKwGyk1J61p82J1PdZSLG';
 
-        EmployeeNo: 'EMP001',
-        statusId: 1,
-        role_id: 1,
-        office_id: 1,
-        isActive: 1,
-        LastName: 'Cruz',
-        FirstName: 'Juan',
-        SameDeptCode: officeMap.find((o) => o.office_id === 1)?.code || null,
-        Position: 'HR Officer',
-        Email: 'juan.cruz@icto.com',
-        Gender: 'M',
-        CivilStatus: 'Married',
-        CityTown: 'Cebu City',
-        Province: 'Cebu',
-        CellNo: '09111111111',
-        MonthlyRate: 25000,
-        Password: hashedPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
 
-      // ADMINS
-      {
-        EmployeeNo: 'EMP002',
-        statusId: 1,
-        role_id: 2,
-        office_id: 2,
-        isActive: 1,
-        LastName: 'Reyes',
-        FirstName: 'Maria',
-        SameDeptCode: officeMap.find((o) => o.office_id === 2)?.code || null,
-        Position: 'Accountant',
-        Email: 'maria.reyes@icto.com',
-        Gender: 'F',
-        CivilStatus: 'Single',
-        Province: 'Cebu',
-        CellNo: '09222222222',
-        MonthlyRate: 30000,
-        Password: adminHashPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        EmployeeNo: 'EMP003',
-        statusId: 1,
-        role_id: 2,
-        office_id: 3,
-        isActive: 1,
-        LastName: 'Garcia',
-        FirstName: 'Pedro',
-        SameDeptCode: officeMap.find((o) => o.office_id === 3)?.code || null,
-        Position: 'Budget Analyst',
-        Email: 'pedro.garcia@icto.com',
-        Gender: 'M',
-        CivilStatus: 'Single',
-        CellNo: '09333333333',
-        MonthlyRate: 28000,
-        Password: adminHashPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        EmployeeNo: 'EMP004',
-        statusId: 1,
-        role_id: 2,
-        office_id: 4,
-        isActive: 1,
-        LastName: 'Torres',
-        FirstName: 'Ana',
-        SameDeptCode: officeMap.find((o) => o.office_id === 4)?.code || null,
-        Position: 'Engineer',
-        Email: 'ana.torres@icto.com',
-        Gender: 'F',
-        CivilStatus: 'Single',
-        PhoneNo: '0321234567',
-        MonthlyRate: 35000,
-        Password: adminHashPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        EmployeeNo: 'EMP005',
-        statusId: 1,
-        role_id: 2,
-        office_id: 5,
-        isActive: 1,
-        LastName: 'Flores',
-        FirstName: 'Mark',
-        SameDeptCode: officeMap.find((o) => o.office_id === 5)?.code || null,
-        Position: 'GSO Staff',
-        Email: 'mark.flores@icto.com',
-        Gender: 'M',
-        CivilStatus: 'Single',
-        CellNo: '09555555555',
-        MonthlyRate: 22000,
-        Password: adminHashPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        EmployeeNo: 'EMP006',
-        statusId: 1,
-        role_id: 2,
-        office_id: 6,
-        isActive: 1,
-        LastName: 'Navarro',
-        FirstName: 'Liza',
-        SameDeptCode: officeMap.find((o) => o.office_id === 6)?.code || null,
-        Position: 'PESO Officer',
-        Email: 'liza.navarro@icto.com',
-        Gender: 'F',
-        CivilStatus: 'Married',
-        MonthlyRate: 26000,
-        Password: adminHashPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        EmployeeNo: 'EMP007',
-        statusId: 1,
-        role_id: 2,
-        office_id: 7,
-        isActive: 1,
-        LastName: 'Santos',
-        FirstName: 'Carlo',
-        SameDeptCode: officeMap.find((o) => o.office_id === 7)?.code || null,
-        Position: 'Tourism Officer',
-        Email: 'carlo.santos@icto.com',
-        Gender: 'M',
-        CivilStatus: 'Single',
-        CellNo: '09777777777',
-        MonthlyRate: 27000,
-        Password: adminHashPassword,
-        createdAt: now,
-        updatedAt: now,
-      },
+    const officeMap = [
+      { office_id: 1, code: "OOG" },
+      { office_id: 2, code: "OVG" },
+      { office_id: 3, code: "OPA" },
+      { office_id: 4, code: "ICTO" },
+      { office_id: 5, code: "PHRMO" },
+      { office_id: 6, code: "PACCO" },
+      { office_id: 7, code: "PBO" },
+      { office_id: 8, code: "PTO" },
+      { office_id: 9, code: "PAO" },
+      { office_id: 10, code: "PEO" },
+      { office_id: 11, code: "PPDO" },
+      { office_id: 12, code: "PGSO" },
+      { office_id: 13, code: "PLO" },
+      { office_id: 14, code: "PIO" },
+      { office_id: 15, code: "PHO" },
+      { office_id: 16, code: "PSWDO" },
+      { office_id: 17, code: "PAGRO" },
+      { office_id: 18, code: "PVO" },
+      { office_id: 19, code: "PENRO" },
+      { office_id: 20, code: "PDRRMO" },
+      { office_id: 21, code: "PTOUR" },
+      { office_id: 22, code: "PESO" },
+      { office_id: 23, code: "PCDO" },
+      { office_id: 24, code: "PPO" },
+      { office_id: 25, code: "BAC" },
+      { office_id: 26, code: "COA" },
+      { office_id: 27, code: "IPCR" },
+      { office_id: 28, code: "MOTOR" },
+      { office_id: 29, code: "RECORDS" },
+      { office_id: 30, code: "SUPPLY" },
     ];
 
-    // 🔥 AUTO-GENERATE USERS (role_id = 3)
-    let empCounter = 100;
 
-    const officeIds = [1, 2, 4, 5, 6, 7, 8];
+    const employees = [];
 
 
-    officeIds.forEach((officeId) => {
-      for (let i = 1; i <= 3; i++) {
-        employees.push({
-          EmployeeNo: `EMP${empCounter++}`,
-          statusId: 1,
-          role_id: 3, // 👈 USERS
-          office_id: officeId,
-          isActive: 0,
+    function addEmployee(data){
+      employees.push({
+        statusId: 1,
+        isActive: 1,
+        Gender: "M",
+        CivilStatus: "Single",
+        Province: "Cebu",
+        CityTown: "Cebu City",
+        MonthlyRate: 20000,
+        createdAt: now,
+        updatedAt: now,
+        ...data
+      });
+    }
 
-          LastName: `User${i}`,
-          FirstName: `User${officeId}`,
 
-          SameDeptCode: officeMap.find((o) => o.office_id === officeId)?.code || null,
 
-          Position: 'Employee',
-          Email: `user${i}_office${officeId}@test.com`,
+    // =========================
+    // SUPER ADMIN (ICTO)
+    // =========================
 
-          Gender: 'M',
-          CivilStatus: 'Single',
+    addEmployee({
+      EmployeeNo:"EMP001",
+      role_id:1,
+      office_id:4,
 
-          CellNo: `09${Math.floor(100000000 + Math.random() * 900000000)}`,
+      LastName:"Cruz",
+      FirstName:"Juan",
 
-          MonthlyRate: 18000,
+      SameDeptCode:"ICTO",
 
-          Password: hashedPassword,
+      Position:"ICT Administrator",
+      Email:"juan.cruz@icto.com",
 
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
+      CellNo:"09111111111",
+
+      MonthlyRate:35000,
+
+      Password:hashedPassword
     });
 
-    await queryInterface.bulkInsert('Employees', employees, {});
+
+
+    // =========================
+    // PGSO ASSET MANAGER
+    // =========================
+
+    addEmployee({
+      EmployeeNo:"EMP002",
+      role_id:2,
+      office_id:12,
+
+      LastName:"Reyes",
+      FirstName:"Maria",
+
+      SameDeptCode:"PGSO",
+
+      Position:"Property Management Officer",
+      Email:"maria.reyes@pgso.com",
+
+      CellNo:"09222222222",
+
+      MonthlyRate:30000,
+
+      Password:adminHashPassword
+    });
+
+
+
+    // =========================
+    // OFFICE ADMINS
+    // =========================
+
+    const adminOffices = [
+      {
+        office_id:5,
+        name:"HR",
+        position:"HR Officer"
+      },
+      {
+        office_id:6,
+        name:"Accounting",
+        position:"Accountant"
+      },
+      {
+        office_id:7,
+        name:"Budget",
+        position:"Budget Officer"
+      },
+      {
+        office_id:10,
+        name:"Engineering",
+        position:"Engineer"
+      },
+      {
+        office_id:22,
+        name:"PESO",
+        position:"Employment Officer"
+      },
+      {
+        office_id:21,
+        name:"Tourism",
+        position:"Tourism Officer"
+      }
+    ];
+
+
+    let counter = 3;
+
+
+    adminOffices.forEach((office)=>{
+
+      const officeCode =
+        officeMap.find(
+          o=>o.office_id===office.office_id
+        ).code;
+
+
+      addEmployee({
+
+        EmployeeNo:`EMP00${counter++}`,
+
+        role_id:2,
+
+        office_id:office.office_id,
+
+        LastName:`${office.name}Admin`,
+        FirstName:"Maria",
+
+        SameDeptCode:officeCode,
+
+        Position:office.position,
+
+        Email:
+        `${officeCode.toLowerCase()}admin@test.com`,
+
+        Password:adminHashPassword
+
+      });
+
+    });
+
+
+
+    // =========================
+    // NORMAL EMPLOYEES
+    // =========================
+
+
+    let empCounter = 100;
+
+
+    const excluded = [
+      4,  // ICTO
+      12  // PGSO
+    ];
+
+
+    officeMap
+    .filter(
+      o=>!excluded.includes(o.office_id)
+    )
+    .forEach((office)=>{
+
+
+      for(let i=1;i<=3;i++){
+
+        addEmployee({
+
+          EmployeeNo:`EMP${empCounter++}`,
+
+          role_id:3,
+
+          office_id:office.office_id,
+
+          isActive:0,
+
+          LastName:`Employee${i}`,
+
+          FirstName:office.code,
+
+          SameDeptCode:office.code,
+
+          Position:"Staff",
+
+          Email:
+          `${office.code.toLowerCase()}${i}@test.com`,
+
+          CellNo:
+          `09${Math.floor(
+            100000000+
+            Math.random()*900000000
+          )}`,
+
+          Password:hashedPassword
+
+        });
+
+      }
+
+    });
+
+
+
+    await queryInterface.bulkInsert(
+      "Employees",
+      employees,
+      {}
+    );
+
   },
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('Employees', null, {});
-  },
+
+  async down(queryInterface){
+
+    await queryInterface.bulkDelete(
+      "Employees",
+      null,
+      {}
+    );
+
+  }
 };
