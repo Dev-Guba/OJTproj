@@ -54,16 +54,6 @@ export default function AssetToolbar({
             <option value="az">Article A-Z</option>
           </Select>
         </div>
-
-        {/* Button */}
-        <Button
-    className="h-11 whitespace-nowrap px-6"
-    onClick={onNewAsset}
->
-          <Plus className="h-4 w-4" />
-          New Asset
-        </Button>
-
       </div>
     </div>
   );

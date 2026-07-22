@@ -27,7 +27,9 @@ export default function AssetTable({ assets, onView }) {
           <thead className="sticky top-0 bg-slate-50">
             <tr className="border-b border-slate-200 text-left text-sm font-semibold text-slate-600">
 
-              <th className="px-6 py-4">Asset</th>
+              <th className="px-6 py-4">
+                Asset
+              </th>
 
               <th className="px-6 py-4">
                 Property Number
@@ -45,6 +47,10 @@ export default function AssetTable({ assets, onView }) {
                 Balance Value
               </th>
 
+              <th className="px-6 py-4">
+                Owner
+              </th>
+
               <th className="px-6 py-4 text-center">
                 Action
               </th>
@@ -52,14 +58,21 @@ export default function AssetTable({ assets, onView }) {
             </tr>
           </thead>
 
+
           <tbody className="divide-y divide-slate-100 bg-white">
+
             {assets.map((asset) => (
               <AssetRow
-                key={asset.ArticleId}
+                key={
+                  asset.recordId ??
+                  asset.id ??
+                  asset.ArticleId
+                }
                 asset={asset}
                 onView={onView}
               />
             ))}
+
           </tbody>
 
         </table>

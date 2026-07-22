@@ -13,12 +13,22 @@ const sequelize = new Sequelize(db_name, db_user, db_password, {
   host: db_host,
   port: db_port,
   dialect: "mssql",
+
   dialectOptions: {
     options: {
-      encrypt: true,
+      encrypt: false,
       trustServerCertificate: true,
+      requestTimeout: 30000,
     },
   },
+
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
+
   logging: false,
 });
 

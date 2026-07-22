@@ -70,13 +70,6 @@ async function startServer() {
     await sequelize.authenticate();
     console.log("✅ Database connected.");
 
- //   registerAuditListeners();
-
-    await Article.sync();
-    console.log("✅ Articles table ready.");
-
-    // await seedAdminIfMissing();
-
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });

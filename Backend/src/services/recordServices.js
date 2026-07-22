@@ -439,17 +439,11 @@ export async function createRecord(data, user) {
     await createForRecord(
   {
     recordId: record.id,
-
     articleId: record.article_id,
-
     previousEmployeeId: null,
-
     newEmployeeId: record.employee_id,
-
     performedBy: user.employeeId,
-
     action: "CREATED",
-
     remarks: `Assigned ${article.article} to ${employee.FirstName} ${employee.LastName}`,
   },
   transaction
@@ -556,11 +550,63 @@ export async function deleteRecord(id, user) {
     throw new Error("Employees are not allowed to delete records.");
   }
 
-  const record = await getRecordById(id, user);
-  if (!record) return null;
+  const transaction = await sequelize.transaction();
 
-  await record.destroy();
-  return true;
+  try {
+    const record = await getRecordById(id, user);
+
+    if (!record) {
+      await transaction.rollback();
+      return null;
+    }
+
+    const employee = await Employee.findByPk(record.employee_id, {
+      transaction,
+    });
+
+    const article = await Article.findByPk(record.article_id, {
+      transaction,
+      lock: true,
+    });
+
+    if (!article) {
+      throw new Error("Article not found.");
+    }
+
+    // Return stock
+    const newQty = Number(article.balQty) + 1;
+    const unitValue = Number(article.unitValue || 0);
+
+    await article.update(
+      {
+        balQty: newQty,
+        balValue: newQty * unitValue,
+      },
+      { transaction }
+    );
+
+    await createForRecord(
+      {
+        recordId: record.id,
+        articleId: record.article_id,
+        previousEmployeeId: record.employee_id,
+        newEmployeeId: null,
+        performedBy: user.EmployeeId, // or user.employeeId if that's what you use everywhere
+        action: "RETURNED",
+        remarks: `The item ${article.article} was returned to PGSO from ${employee.FirstName} ${employee.LastName}.`,
+      },
+      transaction
+    );
+
+    await record.destroy({ transaction });
+
+    await transaction.commit();
+
+    return true;
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 }
 
 // ----------- PDF Report -----------

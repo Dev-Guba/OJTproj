@@ -7,7 +7,6 @@ export default function EditEmployeeModal({
   form,
   saving = false,
   onClose,
-  onConfirm,
   onChange,
 }) {
   const fullName = [selectedEmployee?.FirstName, selectedEmployee?.LastName]
@@ -19,8 +18,6 @@ export default function EditEmployeeModal({
       open={open}
       title="View Employee Account"
       onClose={onClose}
-      onConfirm={onConfirm}
-      confirmText={saving ? "Saving..." : "Save Changes"}
       disabled={saving}
     >
       <div className="space-y-4">
@@ -37,12 +34,14 @@ export default function EditEmployeeModal({
             value={form.firstName}
             onChange={onChange("firstName")}
             required
+            readOnly
           />
           <Input
             label="Last Name"
             value={form.lastName}
             onChange={onChange("lastName")}
             required
+            readOnly
           />
         </div>
 
@@ -51,14 +50,7 @@ export default function EditEmployeeModal({
           type="email"
           value={form.email}
           onChange={onChange("email")}
-        />
-
-        <Input
-          label="New Password"
-          type="password"
-          value={form.password}
-          onChange={onChange("password")}
-          placeholder="Leave blank to keep current"
+          readOnly
         />
       </div>
     </Modal>

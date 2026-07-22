@@ -91,7 +91,7 @@ export default function Modal({
             disabled={disabled}
             className="w-full sm:w-auto"
           >
-            Cancel
+            Exit
           </Button>
 
           <Button

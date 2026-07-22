@@ -84,9 +84,9 @@ await queryInterface.createTable('Employees', {
   ConfidentialityLevel: { type: Sequelize.CHAR(1) },
 
   GroupCode: { type: Sequelize.STRING(20) },
-  Division: { type: Sequelize.STRING(20) },
-  Section: { type: Sequelize.STRING(20) },
-  Position: { type: Sequelize.STRING(20) },
+  Division: { type: Sequelize.STRING(255) },
+  Section: { type: Sequelize.STRING(255) },
+  Position: { type: Sequelize.STRING(255) },
   OfficialPosition: { type: Sequelize.STRING(150) },
 
   // ====================================

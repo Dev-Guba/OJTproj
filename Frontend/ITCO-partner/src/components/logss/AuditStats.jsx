@@ -58,7 +58,7 @@ export default function AuditStats({ logs = [] }) {
     },
 
     {
-      title: "Users",
+      title: "Editors",
       value: activeUsers,
       icon: (
         <svg
