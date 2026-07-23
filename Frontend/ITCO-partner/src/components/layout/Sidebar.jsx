@@ -223,17 +223,18 @@ export default function Sidebar({ open = false, onClose }) {
                 <SubNavItem to="/dashboard/view" label="View Records" onClick={closeMobile} />
                 {canManageRecords && (
                   <SubNavItem to="/dashboard/add" label="Add Record" onClick={closeMobile} />
-                )}
+                )}ss
               </div>
             )}
  
-            <NavItem
-  to="/dashboard/assets"
-  label="Assets"
-  icon={<IconAssets className="h-4.5 w-4.5" />}
-  onClick={closeMobile}
-/>
-
+            {canAccessAssets && (
+              <NavItem
+                to="/dashboard/assets"
+                label="Assets"
+                icon={<IconAssets className="h-4.5 w-4.5" />}
+                onClick={closeMobile}
+              />
+            )}
 {isSuperAdmin && (
   <NavItem
     to="/dashboard/audit-logs"
@@ -242,6 +243,7 @@ export default function Sidebar({ open = false, onClose }) {
     onClick={closeMobile}
   />
 )}
+
 
             {isSuperAdmin && (
               <NavItem

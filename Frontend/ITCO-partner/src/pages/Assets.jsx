@@ -23,6 +23,8 @@ export default function Assets() {
 
   const [availablePage, setAvailablePage] = useState(1);
   const [assignedPage, setAssignedPage] = useState(1);
+  const [showAvailableAssets, setShowAvailableAssets] = useState(true);
+
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -518,40 +520,58 @@ Loading assets...
 <>
 
 
-<h2 className="font-semibold text-lg">
-Available Assets
-</h2>
-
-
-<AssetTable
-assets={availablePaged}
-onView={handleView}
-/>
-
-
-<div className="flex gap-2 mt-3">
+<div className="flex items-center justify-between">
+  <h2 className="font-semibold text-lg">
+    Available Assets
+  </h2>
 
 <button
-className="px-3 py-1 border rounded"
-onClick={()=>setAvailablePage(p=>Math.max(1,p-1))}
+  onClick={() => setShowAvailableAssets(prev => !prev)}
+  className="px-3 py-1 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
 >
-Prev
+  {showAvailableAssets ? "Hide" : "Show"}
 </button>
-
-
-<span className="px-3 py-1">
-Page {availablePage}
-</span>
-
-
-<button
-className="px-3 py-1 border rounded"
-onClick={()=>setAvailablePage(p=>p+1)}
->
-Next
-</button>
-
 </div>
+
+
+{showAvailableAssets && (
+  <>
+    <AssetTable
+      assets={availablePaged}
+      onView={handleView}
+    />
+
+<div className="flex items-center justify-between gap-3 px-4 py-3 border-t">
+  <div className="text-xs text-gray-600">
+    Page <b>{availablePage}</b> of{" "}
+    <b>{Math.max(1, Math.ceil(availableAssets.length / ITEMS_PER_PAGE))}</b>
+    {" • "}
+    {availableAssets.length} record(s)
+  </div>
+
+  <div className="flex gap-2">
+    <button
+      className="px-3 py-1 border rounded disabled:opacity-50"
+      disabled={availablePage === 1}
+      onClick={() => setAvailablePage(p => Math.max(1, p - 1))}
+    >
+      Prev
+    </button>
+
+    <button
+      className="px-3 py-1 border rounded disabled:opacity-50"
+      disabled={
+        availablePage >=
+        Math.ceil(availableAssets.length / ITEMS_PER_PAGE)
+      }
+      onClick={() => setAvailablePage(p => p + 1)}
+    >
+      Next
+    </button>
+  </div>
+</div>
+  </>
+)}
 
 
 
@@ -568,29 +588,34 @@ onView={handleView}
 />
 
 
-<div className="flex gap-2 mt-3">
+<div className="flex items-center justify-between gap-3 px-4 py-3 border-t">
+  <div className="text-xs text-gray-600">
+    Page <b>{assignedPage}</b> of{" "}
+    <b>{Math.max(1, Math.ceil(filteredAssignedAssets.length / ITEMS_PER_PAGE))}</b>
+    {" • "}
+    {filteredAssignedAssets.length} record(s)
+  </div>
 
-<button
-className="px-3 py-1 border rounded"
-onClick={()=>setAssignedPage(p=>Math.max(1,p-1))}
->
-Prev
-</button>
+  <div className="flex gap-2">
+    <button
+      className="px-3 py-1 border rounded disabled:opacity-50"
+      disabled={assignedPage === 1}
+      onClick={() => setAssignedPage(p => Math.max(1, p - 1))}
+    >
+      Prev
+    </button>
 
-
-<span className="px-3 py-1">
-Page {assignedPage}
-</span>
-
-
-<button
-className="px-3 py-1 border rounded"
-onClick={()=>setAssignedPage(p=>p+1)}
->
-Next
-</button>
-
-
+    <button
+      className="px-3 py-1 border rounded disabled:opacity-50"
+      disabled={
+        assignedPage >=
+        Math.ceil(filteredAssignedAssets.length / ITEMS_PER_PAGE)
+      }
+      onClick={() => setAssignedPage(p => p + 1)}
+    >
+      Next
+    </button>
+  </div>
 </div>
 
 
